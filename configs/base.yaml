@@ -1,0 +1,12 @@
+# ru-jev (Жевский) v1 config
+base_model: jhu-clsp/mmBERT-base      # MIT, multilingual, 307M
+out_dir: out/ru-jev-v1
+max_len: 256
+epochs: 3
+lr: 2.0e-5
+batch_examples: 16                     # examples per batch (each expands to its options)
+warmup_ratio: 0.06
+weight_decay: 0.01
+seed: 42
+include_rucola: true
+val_fraction: 0.1                      # for sources without a validation split
