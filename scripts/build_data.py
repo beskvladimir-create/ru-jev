@@ -115,6 +115,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--include-rucola", action="store_true", default=True)
     ap.add_argument("--no-rucola", dest="include_rucola", action="store_false")
+    ap.add_argument("--cap", type=int, default=30000,
+                    help="max rows kept per large single-label source (balance)")
     args = ap.parse_args()
 
     train, val = [], []
@@ -124,15 +126,15 @@ def main():
 
     add(rows_super_glue())
     add(rows_simple("mteb/RuReviewsClassification", "rureviews", "scale",
-                    "text", "label", ["негативный", "нейтральный", "позитивный"]))
+                    "text", "label", ["негативный", "нейтральный", "позитивный"], cap=args.cap))
     add(rows_simple("d0rj/rudetoxifier_data", "toxicity", "boolean",
                     "text", "toxic", ["нетоксичный", "токсичный"],
-                    answer_from=lambda lab: int(round(float(lab)))))
+                    answer_from=lambda lab: int(round(float(lab))), cap=args.cap))
     if args.include_rucola:
         # RuCoLA: 1=acceptable -> приемлемо(0), 0=unacceptable -> неприемлемо(1)
         add(rows_simple("RussianNLP/rucola", "rucola", "boolean",
                         "sentence", "label", ["приемлемо", "неприемлемо"],
-                        answer_from=lambda lab: 0 if int(lab) == 1 else 1))
+                        answer_from=lambda lab: 0 if int(lab) == 1 else 1, cap=args.cap))
 
     random.shuffle(train)
     with open(os.path.join(OUT, "train.jsonl"), "w", encoding="utf-8") as f:

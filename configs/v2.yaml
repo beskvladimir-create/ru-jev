@@ -1,0 +1,13 @@
+# ru-jev v2: larger multilingual encoder, more data, more epochs
+base_model: FacebookAI/xlm-roberta-large   # MIT, 560M, multilingual incl. Russian
+out_dir: out/ru-jev-v2
+max_len: 256
+epochs: 4
+lr: 1.0e-5
+batch_examples: 8               # 560M model, keep within 24GB
+warmup_ratio: 0.06
+weight_decay: 0.01
+seed: 42
+include_rucola: true
+val_fraction: 0.1
+# build data with a higher cap: python scripts/build_data.py --cap 80000
