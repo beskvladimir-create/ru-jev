@@ -34,7 +34,7 @@ def rows_super_glue():
     specs = ["terra", "danetqa", "russe", "rwsd", "parus", "rcb"]
     for cfg in specs:
         try:
-            ds = load_dataset("RussianNLP/russian_super_glue", cfg)
+            ds = load_dataset("RussianNLP/russian_super_glue", cfg, trust_remote_code=True)
         except Exception as e:
             print(f"[skip] russian_super_glue/{cfg}: {e}")
             continue
@@ -75,11 +75,12 @@ def rows_super_glue():
 
 
 def rows_simple(hf_id, task, dtype, text_col, label_col, options, val_fraction=0.1,
-                answer_from=lambda lab: int(lab)):
-    """Generic loader for a single-text classification set."""
+                answer_from=lambda lab: int(lab), cap=30000):
+    """Generic loader for a single-text classification set. `cap` balances large
+    single-label sets so they do not swamp the multi-task mix."""
     out = {"train": [], "val": []}
     try:
-        ds = load_dataset(hf_id)
+        ds = load_dataset(hf_id, trust_remote_code=True)
     except Exception as e:
         print(f"[skip] {hf_id}: {e}")
         return out
@@ -101,6 +102,8 @@ def rows_simple(hf_id, task, dtype, text_col, label_col, options, val_fraction=0
             pool.append({"task": task, "decision_type": dtype,
                          "input": str(r[text_col]), "options": options, "answer": ans})
     random.shuffle(pool)
+    if cap and len(pool) > cap:
+        pool = pool[:cap]
     n_val = max(1, int(len(pool) * val_fraction)) if pool else 0
     out["val"] = pool[:n_val]
     out["train"] = pool[n_val:]
