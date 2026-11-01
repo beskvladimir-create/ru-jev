@@ -19,9 +19,9 @@ base_model: jhu-clsp/mmBERT-base
 <!-- ЧЕРНОВИК КАРТОЧКИ. Не публиковать без подтверждения Владимира. Цифры бенчмарка
      подставляются после обучения, сейчас плейсхолдеры. -->
 
-# Jevsky (Жевский) — open Russian typed-decision model
+# Ружев (Ru-Jev) — open Russian typed-decision model
 
-Jevsky is an open, Russian-first typed-decision model. It does not generate
+Ружев (Ru-Jev) is an open, Russian-first typed-decision model. It does not generate
 text. Given a context and a set of candidate options, it returns a calibrated
 probability over the options and picks one. It handles the same decision shapes
 as closed decision models: yes/no, choice from options, and ordinal scale.
@@ -29,7 +29,7 @@ as closed decision models: yes/no, choice from options, and ordinal scale.
 It runs on CPU, so it can be deployed inside a closed perimeter where sending
 data to an external API is not allowed.
 
-**Not affiliated with TypeSafe AI. Not trained on Jev outputs.** Jevsky is
+**Not affiliated with TypeSafe AI. Not trained on Jev outputs.** Ружев is
 trained only on open, human-labelled datasets (see Training data). The name is a
 play on the category, not a claim of compatibility or endorsement.
 
