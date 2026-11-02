@@ -1,7 +1,10 @@
-# Pin to python 3.11 on the training box. Torch has no 3.15 wheels yet.
-torch>=2.2,<2.9
-transformers>=4.48,<4.56    # ModernBERT/mmBERT support. 4.56+ refuses torch.load
-                            # below torch 2.6, and mmBERT-base ships only a .bin file
+# Python 3.11 or newer on the training box.
+# torch 2.6 is a hard floor, not a preference: transformers refuses to call
+# torch.load below it, and jhu-clsp/mmBERT-base is published only as
+# pytorch_model.bin with no safetensors, so the base model cannot be loaded at
+# all on an older torch. Verified on a training box with torch 2.4.
+torch>=2.6
+transformers>=4.48            # ModernBERT/mmBERT support
 datasets>=2.20,<5             # script datasets are handled via the parquet branch
 scikit-learn>=1.3
 numpy>=1.26
