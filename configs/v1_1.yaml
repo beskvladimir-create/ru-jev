@@ -1,0 +1,14 @@
+# Ru-Jev v1.1 config: same backbone as the published v1, broader data mix.
+# The change that matters is the data (routing + label wordings), not the model.
+base_model: jhu-clsp/mmBERT-base      # MIT, multilingual, 307M
+out_dir: out/ru-jev-v1.1
+max_len: 256
+epochs: 3
+lr: 2.0e-5
+batch_examples: 16
+warmup_ratio: 0.06
+weight_decay: 0.01
+seed: 42
+include_rucola: true
+val_fraction: 0.1
+shuffle_options: true                  # re-order candidates every epoch

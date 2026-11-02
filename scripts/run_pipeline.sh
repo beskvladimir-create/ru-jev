@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
-# Full v1 pipeline. Run on a GPU box with python 3.11.
+# Full pipeline. Run on a GPU box with python 3.11.
+# CONFIG defaults to v1.1; pass another config to reproduce an older run.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+CONFIG="${CONFIG:-configs/v1_1.yaml}"
+OUT=$(python - "$CONFIG" <<'PY'
+import sys, yaml
+print(yaml.safe_load(open(sys.argv[1]))["out_dir"])
+PY
+)
 
 python -m venv .venv
 source .venv/bin/activate
@@ -11,10 +19,13 @@ pip install -r requirements.txt
 echo "== building unified dataset =="
 python scripts/build_data.py
 
-echo "== training =="
-python scripts/train.py --config configs/base.yaml
+echo "== training ($CONFIG) =="
+python scripts/train.py --config "$CONFIG"
 
 echo "== evaluating =="
-python scripts/eval.py --model out/ru-jev-v1
+python scripts/eval.py --model "$OUT"
 
-echo "done. artifacts in out/ru-jev-v1"
+echo "== capability probe =="
+python scripts/probe.py --model "$OUT" --quiet || true
+
+echo "done. artifacts in $OUT"

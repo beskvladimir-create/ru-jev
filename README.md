@@ -59,22 +59,27 @@ is worse on the reasoning tasks and on `russe`, so the published checkpoint is v
 ## Layout
 
 ```
-configs/base.yaml      v1: mmBERT-base, 3 epochs
+configs/base.yaml      v1: mmBERT-base, 3 epochs (the published checkpoint)
+configs/v1_1.yaml      v1.1: same backbone, broader data mix
 configs/v2.yaml        v2: xlm-roberta-large, 4 epochs (trained, not published)
 scripts/build_data.py  builds the unified decision dataset into data/*.jsonl
 scripts/train.py       scoring head + temperature calibration
 scripts/eval.py        per-task accuracy and ECE
-scripts/run_pipeline.sh  the three steps above, end to end
+scripts/probe.py       capability probe on realistic requests, compares two checkpoints
+scripts/run_pipeline.sh  build, train, evaluate, probe
 serve/app.py           FastAPI service with a typed-decision endpoint
 DATASETS.md            sources, licences and what is excluded
 ```
 
 ## Training
 
-Run on a GPU box with python 3.11. Torch has no 3.15 wheels at the time of writing.
+Run on a GPU box with python 3.11. Torch has no 3.15 wheels at the time of
+writing. Apple silicon works too: the scripts pick up MPS when no CUDA device is
+present.
 
 ```bash
-bash scripts/run_pipeline.sh
+bash scripts/run_pipeline.sh                 # v1.1
+CONFIG=configs/base.yaml bash scripts/run_pipeline.sh   # reproduce v1
 ```
 
 That creates a virtualenv, builds `data/train.jsonl` and `data/val.jsonl` from the
@@ -87,9 +92,20 @@ To run the steps separately:
 
 ```bash
 python scripts/build_data.py --cap 30000
-python scripts/train.py --config configs/base.yaml
-python scripts/eval.py --model out/ru-jev-v1
+python scripts/train.py --config configs/v1_1.yaml
+python scripts/eval.py --model out/ru-jev-v1.1
+python scripts/probe.py --model out/ru-jev-v1.1 --model-b model/ru-jev-v1
 ```
+
+`eval.py` reports accuracy per task and the calibration error on the held-out
+split. `probe.py` is a different question: it runs the kinds of request a caller
+of the serving API actually sends, such as routing a ticket to a department or
+asking a free-form yes/no question, and compares two checkpoints on the same
+cases. The dev splits can look healthy while those requests do not work.
+
+Russian SuperGLUE and RuCoLA are script-based datasets and stopped opening in
+`datasets` 4.0. The builder falls back to their auto-converted parquet branch, so
+the build runs on both old and current versions of the library.
 
 ## Serving
 

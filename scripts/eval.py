@@ -12,6 +12,14 @@ from transformers import AutoTokenizer, AutoModel
 HERE = os.path.dirname(__file__)
 
 
+def pick_device():
+    if torch.cuda.is_available():
+        return "cuda"
+    if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 def load_jsonl(path):
     with open(path, encoding="utf-8") as f:
         return [json.loads(l) for l in f if l.strip()]
@@ -36,7 +44,7 @@ def main():
     ap.add_argument("--data", default=os.path.join(HERE, "..", "data", "val.jsonl"))
     args = ap.parse_args()
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = pick_device()
     calib = json.load(open(os.path.join(args.model, "calibration.json")))
     T = calib.get("temperature", 1.0)
     tok = AutoTokenizer.from_pretrained(args.model)

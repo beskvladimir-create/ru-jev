@@ -19,6 +19,17 @@ from transformers import AutoTokenizer, AutoModel, get_linear_schedule_with_warm
 HERE = os.path.dirname(__file__)
 
 
+def pick_device(requested=None):
+    """cuda, then Apple MPS, then cpu. MPS lets the whole run happen on a Mac."""
+    if requested:
+        return requested
+    if torch.cuda.is_available():
+        return "cuda"
+    if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 def load_jsonl(path):
     with open(path, encoding="utf-8") as f:
         return [json.loads(l) for l in f if l.strip()]
@@ -35,14 +46,22 @@ class DecisionData(Dataset):
         return self.rows[i]
 
 
-def make_collate(tok, max_len):
+def make_collate(tok, max_len, shuffle_options=False):
+    """shuffle_options re-orders the candidates of every example on every epoch,
+    so the model cannot lean on the position of the correct answer."""
     def collate(batch):
         max_opts = max(len(b["options"]) for b in batch)
         contexts, options, mask = [], [], []
         answers = []
         for b in batch:
             opts = b["options"]
-            answers.append(b["answer"])
+            ans = b["answer"]
+            if shuffle_options and len(opts) > 1:
+                order = list(range(len(opts)))
+                random.shuffle(order)
+                opts = [opts[i] for i in order]
+                ans = order.index(ans)
+            answers.append(ans)
             row_mask = []
             for j in range(max_opts):
                 if j < len(opts):
@@ -89,16 +108,21 @@ def main():
     cfg = yaml.safe_load(open(args.config))
 
     random.seed(cfg["seed"]); np.random.seed(cfg["seed"]); torch.manual_seed(cfg["seed"])
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = pick_device(cfg.get("device"))
+    print(f"device: {device}")
     out_dir = os.path.join(HERE, "..", cfg["out_dir"])
     os.makedirs(out_dir, exist_ok=True)
 
     tok = AutoTokenizer.from_pretrained(cfg["base_model"])
     model = Scorer(cfg["base_model"]).to(device)
 
-    train_rows = load_jsonl(os.path.join(HERE, "..", "data", "train.jsonl"))
-    val_rows = load_jsonl(os.path.join(HERE, "..", "data", "val.jsonl"))
-    collate = make_collate(tok, cfg["max_len"])
+    data_dir = cfg.get("data_dir") or os.path.join(HERE, "..", "data")
+    train_rows = load_jsonl(os.path.join(data_dir, "train.jsonl"))
+    val_rows = load_jsonl(os.path.join(data_dir, "val.jsonl"))
+    print(f"data: {len(train_rows)} train / {len(val_rows)} val from {data_dir}")
+    collate = make_collate(tok, cfg["max_len"],
+                           shuffle_options=bool(cfg.get("shuffle_options", True)))
+    eval_collate = make_collate(tok, cfg["max_len"], shuffle_options=False)
     dl = DataLoader(DecisionData(train_rows), batch_size=cfg["batch_examples"],
                     shuffle=True, collate_fn=collate)
 
@@ -107,7 +131,7 @@ def main():
     total = len(dl) * cfg["epochs"]
     sched = get_linear_schedule_with_warmup(opt, int(total * cfg["warmup_ratio"]), total)
     use_amp = device == "cuda"
-    scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
     lossf = nn.CrossEntropyLoss()
 
     model.train()
@@ -119,7 +143,7 @@ def main():
             opt_mask = batch["opt_mask"].to(device)
             ans = batch["answers"].to(device)
             opt.zero_grad()
-            with torch.autocast(device_type="cuda", enabled=use_amp):
+            with torch.autocast(device_type="cuda" if use_amp else "cpu", enabled=use_amp):
                 scores = model(ids, am)
                 logits = grouped_logits(scores, batch["n_opts"], opt_mask)
                 loss = lossf(logits, ans)
@@ -129,20 +153,35 @@ def main():
             if step % 50 == 0:
                 print(f"ep{ep} step{step}/{len(dl)} loss {running/(step+1):.4f}")
         print(f"== epoch {ep} done, mean loss {running/len(dl):.4f}")
+        model.eval()
+        vl, vc, vn = 0.0, 0, 0
+        with torch.no_grad():
+            for b in DataLoader(DecisionData(val_rows), batch_size=cfg["batch_examples"],
+                                shuffle=False, collate_fn=eval_collate):
+                ids = b["input_ids"].to(device); am = b["attention_mask"].to(device)
+                lg = grouped_logits(model(ids, am), b["n_opts"], b["opt_mask"].to(device))
+                a = b["answers"].to(device)
+                vl += float(lossf(lg, a)) * a.shape[0]
+                vc += int((lg.argmax(dim=1) == a).sum()); vn += a.shape[0]
+        print(f"   val loss {vl/max(vn,1):.4f}  val acc {vc/max(vn,1):.4f}  (n={vn})")
+        model.train()
 
     # ---- temperature scaling on val ----
     model.eval()
     val_dl = DataLoader(DecisionData(val_rows), batch_size=cfg["batch_examples"],
-                        shuffle=False, collate_fn=collate)
-    all_logits, all_ans = [], []
+                        shuffle=False, collate_fn=eval_collate)
+    all_logits, all_masks, all_ans = [], [], []
     with torch.no_grad():
         for batch in val_dl:
             ids = batch["input_ids"].to(device); am = batch["attention_mask"].to(device)
             scores = model(ids, am)
-            logits = grouped_logits(scores, batch["n_opts"], batch["opt_mask"].to(device))
-            # pad to a common width with -inf so we can stack mixed option counts
-            all_logits.append(logits.cpu()); all_ans.append(batch["answers"])
-    T = fit_temperature(all_logits, all_ans)
+            # keep the raw grid and the mask apart: dividing -inf by T gives a NaN
+            # gradient, which silently produced T = nan on mixed option counts
+            raw = scores.view(batch["opt_mask"].shape[0], batch["n_opts"])
+            all_logits.append(raw.float().cpu())
+            all_masks.append(batch["opt_mask"].cpu())
+            all_ans.append(batch["answers"])
+    T = fit_temperature(all_logits, all_masks, all_ans)
     print(f"fitted temperature T = {T:.4f}")
 
     model.backbone.save_pretrained(out_dir)
@@ -153,18 +192,22 @@ def main():
     print(f"saved to {out_dir}")
 
 
-def fit_temperature(logit_batches, ans_batches):
-    """Fit a single scalar T minimizing NLL over variable-width option logits."""
+def fit_temperature(logit_batches, mask_batches, ans_batches):
+    """Fit a single scalar T minimizing NLL over variable-width option logits.
+
+    The padded slots are masked out *after* the division by T. Masking before it
+    would put -inf into the arithmetic and hand the optimiser a NaN gradient.
+    """
     T = torch.nn.Parameter(torch.ones(1))
     optim = torch.optim.LBFGS([T], lr=0.05, max_iter=100)
     nll = torch.nn.CrossEntropyLoss()
 
     def closure():
         optim.zero_grad()
-        loss = torch.tensor(0.0)
+        loss = torch.zeros((), dtype=torch.float32)
         n = 0
-        for lb, ab in zip(logit_batches, ans_batches):
-            scaled = lb / T.clamp(min=1e-2)
+        for lb, mb, ab in zip(logit_batches, mask_batches, ans_batches):
+            scaled = (lb / T.clamp(min=1e-2)).masked_fill(mb == 0, float("-inf"))
             loss = loss + nll(scaled, ab) * lb.shape[0]
             n += lb.shape[0]
         loss = loss / max(n, 1)
@@ -172,7 +215,11 @@ def fit_temperature(logit_batches, ans_batches):
         return loss
 
     optim.step(closure)
-    return float(T.detach().clamp(min=1e-2).item())
+    t = float(T.detach().clamp(min=1e-2).item())
+    if not (t == t) or t <= 0:          # NaN or nonsense, fall back to no scaling
+        print("[warn] temperature fit failed, falling back to T = 1.0")
+        return 1.0
+    return t
 
 
 if __name__ == "__main__":
