@@ -137,6 +137,36 @@ curl -s localhost:8080/v1/systemone -H 'content-type: application/json' -d '{
 
 `GET /health` reports the loaded model directory, device, max length and temperature.
 
+## What a cheap baseline gets
+
+A number means nothing without something to compare it to. `scripts/baselines.py`
+trains the two things a practitioner reaches for first, on the same training
+rows, scored on the same validation rows.
+
+| Task | Majority class | TF-IDF + logreg | Ru-Jev v1.1 |
+| --- | --- | --- | --- |
+| massive_scenario (18 labels) | 0.066 | 0.435 | 0.954 |
+| massive_intent (60 labels) | 0.063 | 0.820 | 0.965 |
+| terra (entailment) | 0.498 | 0.394 | 0.775 |
+| danetqa (yes/no) | 0.502 | 0.568 | 0.742 |
+| russe (word sense) | 0.631 | 0.701 | 0.822 |
+| georeview (5 levels) | 0.199 | 0.544 | 0.629 |
+| rureviews (sentiment) | 0.324 | 0.720 | 0.772 |
+| rucola (acceptability) | 0.587 | 0.609 | 0.650 |
+| toxicity | 0.766 | 0.943 | 0.961 |
+| rwsd (coreference) | 0.554 | 0.554 | 0.564 |
+
+Read it honestly. The model earns its keep on routing, on entailment and on
+yes/no questions, where surface statistics either fail outright or fall far
+short. On toxicity it is 1.8 points over TF-IDF and on sentiment 5.2 points: if
+that is all you need, a linear model on character n-grams is cheaper to run and
+easier to debug. On `rwsd` the model is level with predicting the majority
+class, so it does not do coreference at all; that row is in the table because
+leaving it out would be dishonest.
+
+The other thing a baseline cannot give you is a calibrated probability, which
+is what makes a threshold mean the same thing from one task to the next.
+
 ## Withholding an answer
 
 A decision is only useful if you know when not to trust it. Pass `threshold`
