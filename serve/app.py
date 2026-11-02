@@ -7,7 +7,8 @@ Ru-Jev by changing the base URL. Decisions are computed locally on CPU by the
 Ru-Jev scoring model, so the text never leaves the host.
 
 Run: uvicorn serve.app:app --host 0.0.0.0 --port 8080
-Model dir via RU_JEV_MODEL env (default out/ru-jev-v1).
+Model dir via RU_JEV_MODEL env; by default out/ru-jev-v1 if present,
+otherwise the released weights in ../model/ru-jev-v1.
 """
 import os, json
 from typing import Any, Dict, List
@@ -17,7 +18,16 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModel
 
-MODEL_DIR = os.environ.get("RU_JEV_MODEL", "out/ru-jev-v1")
+HERE = os.path.dirname(os.path.abspath(__file__))
+# Prefer a fresh training output, then the released weights that live next to
+# this repo (../../model/ru-jev-v1). Override with RU_JEV_MODEL.
+_CANDIDATES = (
+    os.path.join(HERE, "..", "out", "ru-jev-v1"),
+    os.path.join(HERE, "..", "..", "model", "ru-jev-v1"),
+)
+MODEL_DIR = os.environ.get("RU_JEV_MODEL") or next(
+    (p for p in _CANDIDATES if os.path.isdir(p)), _CANDIDATES[0])
+MODEL_DIR = os.path.normpath(MODEL_DIR)
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -37,14 +47,16 @@ app = FastAPI(title="Ru-Jev", version="1.0")
 _tok = None
 _model = None
 _T = 1.0
+_MAX_LEN = 256
 
 
 def _load():
-    global _tok, _model, _T
+    global _tok, _model, _T, _MAX_LEN
     if _model is not None:
         return
     calib = json.load(open(os.path.join(MODEL_DIR, "calibration.json")))
     _T = float(calib.get("temperature", 1.0))
+    _MAX_LEN = int(calib.get("max_len", 256))
     _tok = AutoTokenizer.from_pretrained(MODEL_DIR)
     _model = Scorer(MODEL_DIR).to(DEVICE).eval()
 
@@ -66,7 +78,8 @@ def _state_to_text(state: Any) -> str:
 @torch.no_grad()
 def _distribution(context: str, options: List[str]) -> List[float]:
     enc = _tok([context] * len(options), [str(o) for o in options],
-               truncation=True, max_length=256, padding=True, return_tensors="pt").to(DEVICE)
+               truncation=True, max_length=_MAX_LEN, padding=True,
+               return_tensors="pt").to(DEVICE)
     scores = _model(enc["input_ids"], enc["attention_mask"])
     probs = torch.softmax(scores / max(_T, 1e-2), dim=0)
     return probs.detach().cpu().tolist()
@@ -81,7 +94,8 @@ class DecideRequest(BaseModel):
 @app.get("/health")
 def health():
     _load()
-    return {"status": "ok", "model": MODEL_DIR, "device": DEVICE}
+    return {"status": "ok", "model": MODEL_DIR, "device": DEVICE,
+            "max_len": _MAX_LEN, "temperature": _T}
 
 
 @app.post("/v1/systemone")
