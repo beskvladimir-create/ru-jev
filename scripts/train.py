@@ -166,6 +166,17 @@ def main():
         print(f"   val loss {vl/max(vn,1):.4f}  val acc {vc/max(vn,1):.4f}  (n={vn})")
         model.train()
 
+    # ---- save the weights before anything else can go wrong ----
+    # Calibration runs after this on purpose: a checkpoint with a placeholder
+    # temperature is recoverable, a run that dies before saving is not.
+    model.backbone.save_pretrained(out_dir)
+    tok.save_pretrained(out_dir)
+    torch.save(model.head.state_dict(), os.path.join(out_dir, "head.pt"))
+    json.dump({"temperature": 1.0, "base_model": cfg["base_model"], "max_len": cfg["max_len"],
+               "calibrated": False},
+              open(os.path.join(out_dir, "calibration.json"), "w"))
+    print(f"weights saved to {out_dir} (temperature not fitted yet)")
+
     # ---- temperature scaling on val ----
     model.eval()
     val_dl = DataLoader(DecisionData(val_rows), batch_size=cfg["batch_examples"],
@@ -184,10 +195,8 @@ def main():
     T = fit_temperature(all_logits, all_masks, all_ans)
     print(f"fitted temperature T = {T:.4f}")
 
-    model.backbone.save_pretrained(out_dir)
-    tok.save_pretrained(out_dir)
-    torch.save(model.head.state_dict(), os.path.join(out_dir, "head.pt"))
-    json.dump({"temperature": T, "base_model": cfg["base_model"], "max_len": cfg["max_len"]},
+    json.dump({"temperature": T, "base_model": cfg["base_model"], "max_len": cfg["max_len"],
+               "calibrated": True},
               open(os.path.join(out_dir, "calibration.json"), "w"))
     print(f"saved to {out_dir}")
 
