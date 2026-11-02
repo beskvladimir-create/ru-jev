@@ -33,6 +33,27 @@ from datasets import load_dataset
 PARQUET = "refs/convert/parquet"
 
 
+def _retry(fn, attempts=4, base=5.0):
+    """Повторить загрузку при сетевом сбое.
+
+    Обучение v1.2 прошло без rucola и terra: хаб не отдал их один раз, сборщик
+    написал [skip] и пошёл дальше, а модель осталась без двух задач из
+    тринадцати и показала на них уровень монетки. Разовый сбой сети не должен
+    стоить прогона, поэтому пробуем несколько раз с растущей паузой.
+    """
+    import time
+    last = None
+    for i in range(attempts):
+        try:
+            return fn()
+        except Exception as e:
+            last = e
+            if i + 1 < attempts:
+                print(f"[retry {i + 1}/{attempts - 1}] {type(e).__name__}: {e}", flush=True)
+                time.sleep(base * (2 ** i))
+    raise last
+
+
 def load_any(path, name=None):
     """Load a dataset on any `datasets` version.
 
@@ -41,11 +62,11 @@ def load_any(path, name=None):
     fall back to it instead of pinning the library to an old release.
     """
     try:
-        return load_dataset(path, name) if name else load_dataset(path)
+        return _retry(lambda: load_dataset(path, name) if name else load_dataset(path))
     except Exception as first:
         try:
-            return load_dataset(path, name, revision=PARQUET) if name \
-                else load_dataset(path, revision=PARQUET)
+            return _retry(lambda: load_dataset(path, name, revision=PARQUET) if name
+                          else load_dataset(path, revision=PARQUET))
         except Exception:
             raise first
 
@@ -53,11 +74,12 @@ def load_any(path, name=None):
 def load_rsg(cfg):
     """Russian SuperGLUE config by name, parquet branch first."""
     try:
-        return load_dataset("RussianNLP/russian_super_glue", revision=PARQUET,
-                            data_files={"train": f"{cfg}/train/*.parquet",
-                                        "validation": f"{cfg}/validation/*.parquet"})
+        return _retry(lambda: load_dataset(
+            "RussianNLP/russian_super_glue", revision=PARQUET,
+            data_files={"train": f"{cfg}/train/*.parquet",
+                        "validation": f"{cfg}/validation/*.parquet"}))
     except Exception:
-        return load_dataset("RussianNLP/russian_super_glue", cfg)
+        return _retry(lambda: load_dataset("RussianNLP/russian_super_glue", cfg))
 
 SEED = 42
 random.seed(SEED)
@@ -122,6 +144,48 @@ INTENT_RU = {
     "transport taxi": "вызвать такси", "transport ticket": "купить билет",
     "transport traffic": "узнать про пробки", "weather query": "узнать погоду",
 }
+
+# Жаргон: английский ключ, записанный кириллицей, и его укороченная форма.
+# Так метки пишут в чатах и в тикетах, и v1.1 на них проваливалась: 0.608 против
+# 0.95 на знакомых формулировках. Правила нарочно НЕ подгонялись под словарь из
+# robustness.py, иначе прирост на жаргоне означал бы только утечку теста.
+# Стили применяются ТОЛЬКО к интентам. Сценарный жаргон остаётся отложенным.
+_DIGRAPHS = [("sch", "ш"), ("tch", "ч"), ("sh", "ш"), ("ch", "ч"), ("th", "з"),
+             ("ph", "ф"), ("ck", "к"), ("qu", "кв"), ("ng", "нг"), ("ee", "и"),
+             ("ea", "э"), ("oo", "у"), ("ew", "ью"), ("ou", "ау"), ("ow", "оу"),
+             ("oa", "оу"), ("ai", "эй"), ("ay", "эй"), ("ey", "эй"), ("oi", "ой"),
+             ("ie", "и"), ("ue", "ю"), ("ui", "уи"), ("au", "ау")]
+_SINGLES = {"a": "а", "b": "б", "c": "к", "d": "д", "e": "е", "f": "ф", "g": "г",
+            "h": "х", "i": "и", "j": "дж", "k": "к", "l": "л", "m": "м", "n": "н",
+            "o": "о", "p": "п", "q": "к", "r": "р", "s": "с", "t": "т", "u": "у",
+            "v": "в", "w": "в", "x": "кс", "y": "й", "z": "з"}
+
+
+def translit(word):
+    """Английское слово кириллицей, как его пишут в переписке."""
+    w, out, i = word.lower(), [], 0
+    while i < len(w):
+        for d, r in _DIGRAPHS:
+            if w.startswith(d, i):
+                out.append(r)
+                i += len(d)
+                break
+        else:
+            out.append(_SINGLES.get(w[i], w[i]))
+            i += 1
+    return "".join(out)
+
+
+def jargon_translit(lab):
+    return " ".join(translit(part) for part in lab.replace("_", " ").split())
+
+
+def jargon_clip(lab):
+    """Усечённая форма: так метку сокращают, когда она длинная."""
+    first = lab.replace("_", " ").split()[0]
+    t = translit(first)
+    return t[:5] if len(t) > 6 else t
+
 
 SCENARIO_PHRASE = {
     "alarm": "вопрос про будильники", "audio": "управление звуком",
@@ -311,6 +375,8 @@ def rows_massive(hf_id, task, n_options=5, cap=12000, label_styles=None):
         # Sources spell labels either way ("alarm_set" here, "alarm set" in the
         # style tables), so look the label up under both spellings.
         plain = lab.replace("_", " ")
+        if callable(style):
+            return style(lab)
         if style:
             if lab in style:
                 return style[lab]
@@ -410,12 +476,37 @@ def main():
                      label_styles=[None, SCENARIO_RU, SCENARIO_PHRASE]))
     add(rows_massive("mteb/amazon_massive_intent", "massive_intent",
                      n_options=6, cap=12000,
-                     label_styles=[None, INTENT_RU]))
+                     label_styles=[None, INTENT_RU,
+                                   jargon_translit, jargon_clip]))
     add(rows_mera())
     if args.include_rucola:
         add(rows_simple("RussianNLP/rucola", "rucola", "boolean",
                         "sentence", "label", ["приемлемо", "неприемлемо"],
                         answer_from=lambda lab: 0 if int(lab) == 1 else 1, cap=args.cap))
+
+    from collections import Counter
+    got = Counter(r["task"] for r in train)
+
+    # Проверка состава до записи. v1.2 обучилась без rucola и terra, потому что
+    # хаб не отдал их один раз: сборщик написал [skip], прогон этого не заметил,
+    # и три часа на карте ушли на модель, которая на двух задачах из тринадцати
+    # отвечает монеткой. Теперь недобор данных останавливает сборку.
+    EXPECTED = {"terra": 2616, "danetqa": 1749, "russe": 19845, "rwsd": 606,
+                "parus": 400, "rcb": 438, "rureviews": 27000, "toxicity": 27000,
+                "georeview": 27000, "massive_scenario": 11514,
+                "massive_intent": 11514, "mera_qa": 2208, "rucola": 12101}
+    if not args.include_rucola:
+        EXPECTED.pop("rucola")
+    bad = []
+    for task, ref in sorted(EXPECTED.items()):
+        n = got.get(task, 0)
+        if n < ref // 2:
+            bad.append(f"  {task}: получено {n}, ожидалось около {ref}")
+    if bad:
+        print("\nСОСТАВ ДАННЫХ НЕПОЛНЫЙ, обучение запускать нельзя:")
+        print("\n".join(bad))
+        print("\nнайдено по задачам:", dict(got))
+        raise SystemExit(1)
 
     random.shuffle(train)
     for name, rows in (("train", train), ("val", val)):
@@ -423,10 +514,10 @@ def main():
             for r in rows:
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
-    from collections import Counter
     print("\nTOTAL: {} train / {} val written to {}".format(len(train), len(val), OUT))
-    print("train by task:", dict(Counter(r["task"] for r in train)))
+    print("train by task:", dict(got))
     print("val by task:  ", dict(Counter(r["task"] for r in val)))
+    print("состав полный: все {} задач на месте".format(len(EXPECTED)), flush=True)
 
 
 if __name__ == "__main__":

@@ -20,7 +20,8 @@ import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from build_data import SCENARIO_PHRASE, SCENARIO_RU, load_any  # noqa: E402
+from build_data import (SCENARIO_PHRASE, SCENARIO_RU, jargon_translit,  # noqa: E402
+                        load_any)
 
 # Wordings a real caller might use, none of which appear in any training mix.
 SCENARIO_JARGON = {
@@ -57,6 +58,14 @@ VOCABS = [
     ("названия служб", SCENARIO_DEPARTMENT, "нигде"),
     ("описание запроса", SCENARIO_QUESTION, "нигде"),
 ]
+
+
+# v1.3 обучается на транслитерациях ключей интентов, а ключ интента начинается с
+# названия сценария, так что часть жаргонных меток сценариев попадает в обучение
+# как первое слово. Для этих меток столбец «жаргон» мерит уже не обобщение, а
+# припоминание. Считаю их отдельно и в отчёте даю чистое подмножество.
+LEAKED = sorted(l for l, w in SCENARIO_JARGON.items() if w == jargon_translit(l))
+CLEAN = sorted(l for l in SCENARIO_JARGON if l not in LEAKED)
 
 
 class Scorer(nn.Module):
@@ -111,6 +120,7 @@ def main():
         ok = 0
         confs = []
         overconfident = 0
+        hits = []
         with torch.no_grad():
             for text, gold, distract in cases:
                 opts = [surface(gold)] + [surface(d) for d in distract]
@@ -123,12 +133,18 @@ def main():
                 p = torch.softmax(model(enc["input_ids"], enc["attention_mask"]) / max(T, 1e-2), dim=0)
                 pick = int(torch.argmax(p))
                 confs.append(float(p[pick]))
+                hits.append(int(pick == answer))
                 if pick == answer:
                     ok += 1
                 elif float(p[pick]) > 0.8:
                     overconfident += 1
         print(f"| {name} | {seen} | {ok}/{len(cases)} = {ok/len(cases):.3f} | "
               f"{sum(confs)/len(confs):.3f} | {overconfident} |")
+        if name == "жаргон":
+            cl = [i for i, (_, gold, _) in enumerate(cases) if gold in CLEAN]
+            n_cl = sum(hits[i] for i in cl)
+            print(f"| жаргон, чистое подмножество | нигде | {n_cl}/{len(cl)} = "
+                  f"{n_cl/max(len(cl), 1):.3f} | | |")
 
 
 if __name__ == "__main__":
