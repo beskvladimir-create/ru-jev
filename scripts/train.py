@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train ru-jev (Жевский): a calibrated typed-decision scorer on mmBERT.
+"""Train Ru-Jev: a calibrated typed-decision scorer on mmBERT.
 
 Model: encoder backbone + linear scoring head over (context [SEP] option) pairs.
 For each example the options are scored and a softmax gives the decision

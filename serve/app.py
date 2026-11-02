@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Ru-Jev serving API, drop-in compatible with the Jev typed-decision format.
+"""Ru-Jev serving API in the typed-decision request format.
 
 Exposes POST /v1/systemone accepting {model, state, questions} and returning
-{model, answers, usage, providerMetadata}. A client built for Jev switches to
-Ru-Jev by changing the base URL. Decisions are computed locally on CPU by the
-Ru-Jev scoring model, so the text never leaves the host.
+{model, answers, usage, providerMetadata}. A client written against a closed
+decision API moves over by changing the base URL. Decisions are computed locally
+on CPU by the Ru-Jev scoring model, so the text never leaves the host.
 
 Run: uvicorn serve.app:app --host 0.0.0.0 --port 8080
 Model dir via RU_JEV_MODEL env; by default out/ru-jev-v1 if present,

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Full v1 pipeline. Run on a GPU box (RunPod, python 3.11).
+# Full v1 pipeline. Run on a GPU box with python 3.11.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

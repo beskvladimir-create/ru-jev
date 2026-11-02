@@ -1,4 +1,4 @@
-# Pin to python 3.11 on the training box (RunPod). Torch has no 3.15 wheels yet.
+# Pin to python 3.11 on the training box. Torch has no 3.15 wheels yet.
 torch>=2.2,<2.9
 transformers>=4.48          # ModernBERT/mmBERT support
 datasets>=2.20

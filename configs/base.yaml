@@ -1,4 +1,4 @@
-# ru-jev (Жевский) v1 config
+# Ru-Jev v1 config
 base_model: jhu-clsp/mmBERT-base      # MIT, multilingual, 307M
 out_dir: out/ru-jev-v1
 max_len: 256

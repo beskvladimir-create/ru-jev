@@ -1,22 +1,35 @@
-# Источники данных и лицензии
+# Data sources and licences
 
-Проверено 2026-11-01 по карточкам на Hugging Face. В сборку идут только наборы, разрешающие коммерческое использование. NC-наборы исключены.
+Verified on 2026-11-01 against the Hugging Face dataset cards. Only sources that
+permit commercial use go into the build. Non-commercial sets are excluded.
 
-| Набор | HF id | Лицензия | Коммерция | Что берём | Тип решения |
+| Dataset | HF id | Licence | Commercial | What is used | Decision type |
 |---|---|---|---|---|---|
-| Russian SuperGLUE | `RussianNLP/russian_super_glue` | MIT | да | terra, danetqa, russe, rwsd (да/нет), parus (выбор из 2), rcb (3 класса) | boolean, choice |
-| RuReviews (MTEB) | `mteb/RuReviewsClassification` | Apache-2.0 | да | тональность 0/1/2 | scale |
-| RuDetoxifier data | `d0rj/rudetoxifier_data` | MIT | да | токсичность 0/1 | boolean |
-| RuCoLA | `RussianNLP/rucola` | Apache-2.0 (метки и код) | да, с оговоркой | приемлемость 0/1 | boolean |
+| Russian SuperGLUE | `RussianNLP/russian_super_glue` | MIT | yes | terra, danetqa, russe, rwsd (yes/no), parus (choice of 2), rcb (3 classes) | boolean, choice |
+| RuReviews (MTEB) | `mteb/RuReviewsClassification` | Apache-2.0 | yes | sentiment 0/1/2 | scale |
+| RuDetoxifier data | `d0rj/rudetoxifier_data` | MIT | yes | toxicity 0/1 | boolean |
+| RuCoLA | `RussianNLP/rucola` | Apache-2.0 (labels and code) | yes, with a caveat | acceptability 0/1 | boolean |
 
-## Оговорки
-- **RuCoLA**: Apache-2.0 покрывает метки и код. У исходных предложений из лингвистических публикаций своё авторство. Мы обучаем на них свою модель, но не редистрибутируем сам корпус. Включается флагом `include_rucola` (по умолчанию включён, можно выключить для максимально чистой лицензии).
-- **RuReviews**: пакет MTEB под Apache-2.0, исходник `github.com/sismetanin/rureviews`. Для релиза достаточно обучения на метках.
+## Caveats
 
-## Исключено (лицензия non-commercial, в коммерческий релиз НЕ идут)
-- `Mikimi/RuAllToxic` — cc-by-nc-sa-4.0
-- `mteb/SensitiveTopicsClassification`, `NiGuLa/Russian_Sensitive_Topics` — cc-by-nc-sa / cc
-- прочие токсичные наборы без явной коммерческой лицензии
+- **RuCoLA.** Apache-2.0 covers the labels and the code. The underlying sentences are
+  drawn from linguistic publications and carry their own authorship. The model is
+  trained on them, the corpus itself is not redistributed. Controlled by the
+  `include_rucola` flag, on by default, switch it off with `--no-rucola` for the
+  cleanest possible licence position.
+- **RuReviews.** The MTEB package is Apache-2.0, the original source is
+  `github.com/sismetanin/rureviews`. Training on the labels is sufficient for the
+  release.
 
-## Запрещено отдельно
-- Не обучать на ответах API Jev (запрет дистилляции в условиях TypeSafe AI). Все источники выше это открытые датасеты с разметкой людьми, к Jev отношения не имеют.
+## Excluded, non-commercial licence
+
+- `Mikimi/RuAllToxic`, cc-by-nc-sa-4.0
+- `mteb/SensitiveTopicsClassification` and `NiGuLa/Russian_Sensitive_Topics`,
+  cc-by-nc-sa and cc
+- other toxicity sets without an explicit commercial licence
+
+## Excluded on principle
+
+Nothing here is trained on the outputs of a closed decision API. Distillation from
+such an API is forbidden by its terms, and every source above is an open dataset with
+human annotation that has no connection to it.
