@@ -101,6 +101,27 @@ def grouped_logits(scores, n_opts, opt_mask):
     return logits
 
 
+def save_checkpoint(model, tok, out_dir, cfg, temperature=None, epoch=None):
+    """Write the backbone, tokenizer, head and calibration file to out_dir.
+
+    temperature None means it has not been fitted yet: the file then carries 1.0
+    and calibrated false, so a checkpoint can never be mistaken for a calibrated
+    one just because it exists.
+    """
+    os.makedirs(out_dir, exist_ok=True)
+    model.backbone.save_pretrained(out_dir)
+    tok.save_pretrained(out_dir)
+    torch.save(model.head.state_dict(), os.path.join(out_dir, "head.pt"))
+    meta = {"temperature": float(temperature) if temperature is not None else 1.0,
+            "base_model": cfg["base_model"], "max_len": cfg["max_len"],
+            "calibrated": temperature is not None}
+    if epoch is not None:
+        meta["epoch"] = epoch
+    json.dump(meta, open(os.path.join(out_dir, "calibration.json"), "w"))
+    state = "calibrated" if temperature is not None else "temperature not fitted yet"
+    print(f"checkpoint saved to {out_dir} after epoch {epoch} ({state})", flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default=os.path.join(HERE, "..", "configs", "base.yaml"))
@@ -164,18 +185,15 @@ def main():
                 vl += float(lossf(lg, a)) * a.shape[0]
                 vc += int((lg.argmax(dim=1) == a).sum()); vn += a.shape[0]
         print(f"   val loss {vl/max(vn,1):.4f}  val acc {vc/max(vn,1):.4f}  (n={vn})")
+        # Save after every epoch. A run can die for reasons that have nothing to
+        # do with the code, a spent balance among them, and an epoch-old
+        # checkpoint is worth incomparably more than none.
+        save_checkpoint(model, tok, out_dir, cfg, temperature=None, epoch=ep)
         model.train()
 
-    # ---- save the weights before anything else can go wrong ----
     # Calibration runs after this on purpose: a checkpoint with a placeholder
     # temperature is recoverable, a run that dies before saving is not.
-    model.backbone.save_pretrained(out_dir)
-    tok.save_pretrained(out_dir)
-    torch.save(model.head.state_dict(), os.path.join(out_dir, "head.pt"))
-    json.dump({"temperature": 1.0, "base_model": cfg["base_model"], "max_len": cfg["max_len"],
-               "calibrated": False},
-              open(os.path.join(out_dir, "calibration.json"), "w"))
-    print(f"weights saved to {out_dir} (temperature not fitted yet)")
+    save_checkpoint(model, tok, out_dir, cfg, temperature=None, epoch="final")
 
     # ---- temperature scaling on val ----
     model.eval()
@@ -195,10 +213,7 @@ def main():
     T = fit_temperature(all_logits, all_masks, all_ans)
     print(f"fitted temperature T = {T:.4f}")
 
-    json.dump({"temperature": T, "base_model": cfg["base_model"], "max_len": cfg["max_len"],
-               "calibrated": True},
-              open(os.path.join(out_dir, "calibration.json"), "w"))
-    print(f"saved to {out_dir}")
+    save_checkpoint(model, tok, out_dir, cfg, temperature=T, epoch="final")
 
 
 def fit_temperature(logit_batches, mask_batches, ans_batches):

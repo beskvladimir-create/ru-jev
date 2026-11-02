@@ -84,6 +84,80 @@ SCENARIO_RU = {
 }
 
 
+# A caller names the options in their own words. Training on one surface form
+# per label teaches the label string, not what it means: with the MASSIVE
+# wording routing is right 7 times in 8, with jargon such as "биллинг" it drops
+# to 3. Every fixed label set below therefore ships in several styles and one
+# is drawn per example, so the model has to read the option rather than
+# recognise it.
+INTENT_RU = {
+    "alarm query": "узнать про будильник", "alarm remove": "удалить будильник",
+    "alarm set": "поставить будильник", "audio volume down": "сделать тише",
+    "audio volume mute": "выключить звук", "audio volume other": "настроить громкость",
+    "audio volume up": "сделать громче", "calendar query": "посмотреть календарь",
+    "calendar remove": "удалить событие из календаря", "calendar set": "создать событие в календаре",
+    "cooking query": "вопрос про готовку", "cooking recipe": "найти рецепт",
+    "datetime convert": "перевести время в другой часовой пояс", "datetime query": "узнать дату или время",
+    "email addcontact": "добавить контакт", "email query": "посмотреть почту",
+    "email querycontact": "найти контакт", "email sendemail": "отправить письмо",
+    "general greet": "приветствие", "general joke": "рассказать шутку",
+    "general quirky": "странный вопрос", "iot cleaning": "запустить уборку",
+    "iot coffee": "сварить кофе", "iot hue lightchange": "сменить цвет света",
+    "iot hue lightdim": "приглушить свет", "iot hue lightoff": "выключить свет",
+    "iot hue lighton": "включить свет", "iot hue lightup": "сделать свет ярче",
+    "iot wemo off": "выключить розетку", "iot wemo on": "включить розетку",
+    "lists createoradd": "добавить в список", "lists query": "посмотреть список",
+    "lists remove": "удалить из списка", "music dislikeness": "эта песня не нравится",
+    "music likeness": "эта песня нравится", "music query": "узнать про песню",
+    "music settings": "настройки музыки", "news query": "узнать новости",
+    "play audiobook": "включить аудиокнигу", "play game": "запустить игру",
+    "play music": "включить музыку", "play podcasts": "включить подкаст",
+    "play radio": "включить радио", "qa currency": "курс валют",
+    "qa definition": "значение слова", "qa factoid": "фактический вопрос",
+    "qa maths": "посчитать", "qa stock": "котировки акций",
+    "recommendation events": "посоветовать мероприятие", "recommendation locations": "посоветовать место",
+    "recommendation movies": "посоветовать фильм", "social post": "опубликовать пост",
+    "social query": "посмотреть соцсети", "takeaway order": "заказать еду",
+    "takeaway query": "узнать про заказ еды", "transport query": "узнать про транспорт",
+    "transport taxi": "вызвать такси", "transport ticket": "купить билет",
+    "transport traffic": "узнать про пробки", "weather query": "узнать погоду",
+}
+
+SCENARIO_PHRASE = {
+    "alarm": "вопрос про будильники", "audio": "управление звуком",
+    "calendar": "работа с календарём", "cooking": "готовка и рецепты",
+    "datetime": "вопрос про дату и время", "email": "работа с почтой",
+    "general": "болтовня и общие вопросы", "iot": "управление умным домом",
+    "lists": "работа со списками", "music": "музыка и плеер",
+    "news": "новости", "play": "включить что-нибудь",
+    "qa": "справочный вопрос", "recommendation": "посоветовать что-нибудь",
+    "social": "социальные сети", "takeaway": "заказ и доставка еды",
+    "transport": "поездки и транспорт", "weather": "прогноз погоды",
+}
+
+# Each entry is one complete way to name the same ordered label set.
+SENTIMENT_STYLES = [
+    ["негативный", "нейтральный", "позитивный"],
+    ["отрицательный", "нейтральный", "положительный"],
+    ["плохо", "нормально", "хорошо"],
+    ["ругает", "спокойно", "хвалит"],
+    ["negative", "neutral", "positive"],
+]
+TOXICITY_STYLES = [
+    ["токсичный", "нетоксичный"],
+    ["оскорбительный", "вежливый"],
+    ["хамство", "нормальная речь"],
+    ["грубый", "спокойный"],
+    ["toxic", "clean"],
+]
+GEOREVIEW_STYLES = [
+    ["очень плохо", "плохо", "нормально", "хорошо", "отлично"],
+    ["ужасно", "так себе", "средне", "неплохо", "превосходно"],
+    ["1 звезда", "2 звезды", "3 звезды", "4 звезды", "5 звёзд"],
+    ["very bad", "bad", "average", "good", "excellent"],
+]
+
+
 def emit(rows, split, task, dtype, inp, options, answer, shuffle=True):
     """Append one example, shuffling the options and remapping the answer."""
     opts = [str(o) for o in options]
@@ -162,7 +236,9 @@ def rows_super_glue():
 # --------------------------------------------------------------------------- #
 def rows_simple(hf_id, task, dtype, text_col, label_col, options, val_fraction=0.1,
                 answer_from=lambda lab: int(lab), cap=30000, config=None,
-                boolean_variants=False):
+                boolean_variants=False, option_styles=None):
+    """option_styles: alternative namings of the same ordered label set. One is
+    drawn per example, so the model reads the option instead of memorising it."""
     out = new()
     try:
         ds = load_any(hf_id, config)
@@ -190,7 +266,12 @@ def rows_simple(hf_id, task, dtype, text_col, label_col, options, val_fraction=0
     n_val = max(1, int(len(pool) * val_fraction)) if pool else 0
     for i, (text, ans) in enumerate(pool):
         dest = "val" if i < n_val else "train"
-        opts = list(boolean_pair()) if boolean_variants else list(options)
+        if boolean_variants:
+            opts = list(boolean_pair())
+        elif option_styles:
+            opts = list(random.choice(option_styles))
+        else:
+            opts = list(options)
         emit(out, dest, task, dtype, text, opts, ans)
     print(f"[ok] {hf_id}: {len(out['train'])} train / {len(out['val'])} val")
     return out
@@ -199,7 +280,10 @@ def rows_simple(hf_id, task, dtype, text_col, label_col, options, val_fraction=0
 # --------------------------------------------------------------------------- #
 # MASSIVE: intent and scenario routing, options drawn from the real label set
 # --------------------------------------------------------------------------- #
-def rows_massive(hf_id, task, n_options=5, cap=12000, ru_names=None):
+def rows_massive(hf_id, task, n_options=5, cap=12000, label_styles=None):
+    """label_styles: mappings from the canonical label to one surface form, or
+    None for the label as the dataset writes it. One style is drawn per example
+    and applied to every option, the way a caller names their whole label set."""
     out = new()
     try:
         ds = load_any(hf_id, "ru")
@@ -221,10 +305,18 @@ def rows_massive(hf_id, task, n_options=5, cap=12000, ru_names=None):
         return out
     print(f"[ok] {hf_id}: {len(labels)} labels, field '{field}'")
 
-    def surface(lab, russian):
-        if russian and ru_names and lab in ru_names:
-            return ru_names[lab]
-        return lab.replace("_", " ")
+    styles = label_styles or [None]
+
+    def surface(lab, style):
+        # Sources spell labels either way ("alarm_set" here, "alarm set" in the
+        # style tables), so look the label up under both spellings.
+        plain = lab.replace("_", " ")
+        if style:
+            if lab in style:
+                return style[lab]
+            if plain in style:
+                return style[plain]
+        return plain
 
     for split_name, dest in (("train", "train"), ("validation", "val"), ("test", "val")):
         if split_name not in ds:
@@ -239,8 +331,8 @@ def rows_massive(hf_id, task, n_options=5, cap=12000, ru_names=None):
             gold = r[field]
             others = [l for l in labels if l != gold]
             distract = random.sample(others, min(n_options - 1, len(others)))
-            russian = ru_names is not None and random.random() < 0.5
-            opts = [surface(gold, russian)] + [surface(d, russian) for d in distract]
+            style = random.choice(styles)
+            opts = [surface(gold, style)] + [surface(d, style) for d in distract]
             emit(out, dest, task, "choice", str(r["text"]), opts, 0)
     print(f"      {len(out['train'])} train / {len(out['val'])} val")
     return out
@@ -302,21 +394,23 @@ def main():
 
     add(rows_super_glue())
     add(rows_simple("mteb/RuReviewsClassification", "rureviews", "scale",
-                    "text", "label", ["негативный", "нейтральный", "позитивный"],
-                    cap=args.cap))
+                    "text", "label", SENTIMENT_STYLES[0],
+                    option_styles=SENTIMENT_STYLES, cap=args.cap))
     add(rows_simple("d0rj/rudetoxifier_data", "toxicity", "boolean",
-                    "text", "toxic", ["токсичный", "нетоксичный"],
+                    "text", "toxic", TOXICITY_STYLES[0],
                     answer_from=lambda lab: 0 if int(round(float(lab))) == 1 else 1,
-                    cap=args.cap))
+                    option_styles=TOXICITY_STYLES, cap=args.cap))
     # 5-level ordinal reviews, label 0..4 == 1..5 stars (verified 2026-11-02)
     add(rows_simple("mteb/GeoreviewClassification", "georeview", "scale",
                     "text", "label",
-                    ["очень плохо", "плохо", "нормально", "хорошо", "отлично"],
+                    GEOREVIEW_STYLES[0], option_styles=GEOREVIEW_STYLES,
                     cap=args.cap))
     add(rows_massive("mteb/amazon_massive_scenario", "massive_scenario",
-                     n_options=5, cap=12000, ru_names=SCENARIO_RU))
+                     n_options=5, cap=12000,
+                     label_styles=[None, SCENARIO_RU, SCENARIO_PHRASE]))
     add(rows_massive("mteb/amazon_massive_intent", "massive_intent",
-                     n_options=6, cap=12000))
+                     n_options=6, cap=12000,
+                     label_styles=[None, INTENT_RU]))
     add(rows_mera())
     if args.include_rucola:
         add(rows_simple("RussianNLP/rucola", "rucola", "boolean",

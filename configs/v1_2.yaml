@@ -1,0 +1,17 @@
+# Ru-Jev v1.2: same backbone and the same number of rows as v1.1.
+# The one change is that every fixed label set now ships in several wordings and
+# one is drawn per example, so the model has to read an option instead of
+# recognising it. v1.1 scored 7 of 8 on routing with the wording it trained on
+# and 3 of 8 with jargon; closing that gap is the whole point of this run.
+base_model: jhu-clsp/mmBERT-base      # MIT, multilingual, 307M
+out_dir: out/ru-jev-v1.2
+max_len: 256
+epochs: 3
+lr: 2.0e-5
+batch_examples: 16
+warmup_ratio: 0.06
+weight_decay: 0.01
+seed: 42
+include_rucola: true
+val_fraction: 0.1
+shuffle_options: true                  # re-order candidates every epoch
