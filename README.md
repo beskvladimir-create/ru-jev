@@ -137,6 +137,37 @@ curl -s localhost:8080/v1/systemone -H 'content-type: application/json' -d '{
 
 `GET /health` reports the loaded model directory, device, max length and temperature.
 
+## Withholding an answer
+
+A decision is only useful if you know when not to trust it. Pass `threshold`
+and the service withholds any answer below that confidence and lists the
+question under `providerMetadata.ru_jev.review`:
+
+```json
+{
+  "threshold": 0.8,
+  "state": {"text": "Списали деньги дважды за один заказ"},
+  "questions": {"route": {"type": "choice", "criteria": {"billing": "оплата, счета и возвраты", "support": "техническая проблема"}}}
+}
+```
+
+Answers below the threshold carry `"abstain": true`. Omit `threshold` and
+nothing is withheld, which is how the service behaved before.
+
+What a threshold buys, measured on the held-out half of the validation set
+(13,373 decisions, v1.1):
+
+| Share sent through automatically | Threshold | Accuracy on those | Errors per 1000 |
+| --- | --- | --- | --- |
+| 30% | 0.98 | 99.3% | 7 |
+| 50% | 0.85 | 97.1% | 29 |
+| 60% | 0.77 | 95.1% | 49 |
+| 80% | 0.60 | 89.5% | 105 |
+| 100% | none | 82.5% | 175 |
+
+Per decision shape, at 95% accuracy or better: routing over many options clears
+the whole stream, while yes/no and small choices clear about half of it.
+
 ## Training data
 
 Open datasets only, all permitting commercial use. Non-commercial sets are excluded,

@@ -89,6 +89,10 @@ class DecideRequest(BaseModel):
     model: str | None = "ru-jev-latest"
     state: Any
     questions: Dict[str, Dict[str, Any]]
+    # Below this confidence the answer is withheld and the question is marked for
+    # a human. Set per question with "threshold", or here for the whole request.
+    # Omit it and nothing is withheld, which is the previous behaviour.
+    threshold: float | None = None
 
 
 @app.get("/health")
@@ -105,8 +109,11 @@ def systemone(req: DecideRequest):
     answers: Dict[str, Any] = {}
     confidence: Dict[str, float] = {}
 
+    review: List[str] = []
+
     for qid, q in req.questions.items():
         qtype = q.get("type")
+        thr = q.get("threshold", req.threshold)
         instr = q.get("instructions", "")
         ctx = f"{instr}\n{context}" if instr else context
         crit = q.get("criteria")
@@ -143,10 +150,16 @@ def systemone(req: DecideRequest):
         else:
             raise HTTPException(400, f"unsupported question type: {qtype}")
 
+        if thr is not None and confidence[qid] < float(thr):
+            answers[qid]["abstain"] = True
+            review.append(qid)
+        elif thr is not None:
+            answers[qid]["abstain"] = False
+
     toks = len(_tok(context)["input_ids"])
     return {
         "model": req.model or "ru-jev-latest",
         "answers": answers,
         "usage": {"input_tokens": toks, "output_tokens": 0},
-        "providerMetadata": {"ru_jev": {"confidence": confidence}},
+        "providerMetadata": {"ru_jev": {"confidence": confidence, "review": review}},
     }
