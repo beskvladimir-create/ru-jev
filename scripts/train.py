@@ -195,30 +195,52 @@ def main():
 def fit_temperature(logit_batches, mask_batches, ans_batches):
     """Fit a single scalar T minimizing NLL over variable-width option logits.
 
+    Everything is stacked into one tensor first. An earlier version looped over
+    the per-batch tensors inside the optimiser closure, which rebuilt a graph
+    over every validation batch on each of the ~125 evaluations and turned a
+    two-second fit into more than an hour on CPU.
+
     The padded slots are masked out *after* the division by T. Masking before it
     would put -inf into the arithmetic and hand the optimiser a NaN gradient.
     """
-    T = torch.nn.Parameter(torch.ones(1))
-    optim = torch.optim.LBFGS([T], lr=0.05, max_iter=100)
+    width = max(lb.shape[1] for lb in logit_batches)
+    logits, masks, answers = [], [], []
+    for lb, mb, ab in zip(logit_batches, mask_batches, ans_batches):
+        pad = width - lb.shape[1]
+        if pad:
+            lb = torch.nn.functional.pad(lb, (0, pad))
+            mb = torch.nn.functional.pad(mb, (0, pad))
+        logits.append(lb.float()); masks.append(mb); answers.append(ab)
+    L = torch.cat(logits).float()
+    M = torch.cat(masks)
+    A = torch.cat(answers)
     nll = torch.nn.CrossEntropyLoss()
+
+    def loss_at(t):
+        scaled = (L / t).masked_fill(M == 0, float("-inf"))
+        return nll(scaled, A)
+
+    # coarse scan first, so the optimiser starts near the answer and a bad
+    # starting point cannot send it somewhere silly
+    with torch.no_grad():
+        grid = torch.linspace(0.25, 6.0, 48)
+        best = min(grid, key=lambda g: float(loss_at(float(g))))
+    T = torch.nn.Parameter(torch.tensor([float(best)]))
+    optim = torch.optim.LBFGS([T], lr=0.05, max_iter=60)
 
     def closure():
         optim.zero_grad()
-        loss = torch.zeros((), dtype=torch.float32)
-        n = 0
-        for lb, mb, ab in zip(logit_batches, mask_batches, ans_batches):
-            scaled = (lb / T.clamp(min=1e-2)).masked_fill(mb == 0, float("-inf"))
-            loss = loss + nll(scaled, ab) * lb.shape[0]
-            n += lb.shape[0]
-        loss = loss / max(n, 1)
+        loss = loss_at(T.clamp(min=1e-2))
         loss.backward()
         return loss
 
     optim.step(closure)
     t = float(T.detach().clamp(min=1e-2).item())
-    if not (t == t) or t <= 0:          # NaN or nonsense, fall back to no scaling
-        print("[warn] temperature fit failed, falling back to T = 1.0")
-        return 1.0
+    if not (t == t) or t <= 0:          # NaN or nonsense, fall back to the scan
+        print(f"[warn] temperature fit failed, falling back to the scan value {float(best):.3f}")
+        return float(best)
+    with torch.no_grad():
+        print(f"    nll at T=1: {float(loss_at(1.0)):.4f}  at T={t:.3f}: {float(loss_at(t)):.4f}")
     return t
 
 
