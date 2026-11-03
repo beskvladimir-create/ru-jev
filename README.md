@@ -26,27 +26,43 @@ which is what makes the returned confidence usable as a routing threshold.
 
 ## Results
 
-Measured on the held-out development split, 17,501 items.
+v1.3, measured on its own held-out validation split of 26,746 decisions. The
+temperature is fitted on one half and the calibration error reported on the
+other, so it is an estimate for new data rather than a fit to these rows.
 
 | Metric | Value |
 | --- | --- |
-| ECE (calibration error) | 0.0054 |
-| Temperature | 1.82 |
-| Overall accuracy (micro) | 0.824 |
+| Accuracy (micro) | 0.823 |
+| ECE, temperature fitted on a disjoint half | 0.0185 |
+| ECE, temperature fitted on the same rows | 0.0159 |
+| Temperature | 1.864 |
+
+The earlier table here reported 0.0054, which was fitted and scored on the same
+rows. That figure is in-sample and optimistic, and it should not be compared
+with the one above.
 
 Per task:
 
 | Task | Accuracy | n |
 | --- | --- | --- |
-| toxicity | 0.964 | 3000 |
-| russe | 0.846 | 8505 |
+| massive_intent (60 labels) | 0.960 | 3000 |
+| massive_scenario (18 labels) | 0.955 | 3000 |
+| toxicity | 0.954 | 3000 |
+| russe (word sense) | 0.824 | 8505 |
 | rureviews (sentiment) | 0.774 | 3000 |
-| terra (entailment) | 0.762 | 307 |
-| danetqa (yes/no) | 0.711 | 821 |
-| rucola (acceptability) | 0.686 | 1344 |
-| parus (choice) | 0.600 | 100 |
-| rcb (3-way NLI) | 0.518 | 220 |
-| rwsd (coreference) | 0.490 | 204 |
+| danetqa (yes/no) | 0.753 | 821 |
+| terra (entailment) | 0.733 | 307 |
+| rucola (acceptability) | 0.647 | 1344 |
+| georeview (5 levels) | 0.631 | 3000 |
+| mera_qa (reasoning) | 0.596 | 245 |
+| parus (choice) | 0.590 | 100 |
+| rcb (3-way NLI) | 0.509 | 220 |
+| rwsd (coreference) | 0.480 | 204 |
+
+These are not comparable with the per-task numbers of earlier releases. The
+validation slice moved between builds and so did the wording of the options;
+`model/ru-jev-v1.3/README.md` sets out which tasks can be compared and which
+cannot, and what the difference cost in retracted claims.
 
 The overall figure is a micro average, so the large `russe` split weighs on it.
 Reasoning-heavy tasks (rwsd, rcb, parus) are the weak points for an encoder of this
@@ -189,14 +205,27 @@ What a threshold buys, measured on the held-out half of the validation set
 
 | Share sent through automatically | Threshold | Accuracy on those | Errors per 1000 |
 | --- | --- | --- | --- |
-| 30% | 0.98 | 99.3% | 7 |
-| 50% | 0.85 | 97.1% | 29 |
-| 60% | 0.77 | 95.1% | 49 |
-| 80% | 0.60 | 89.5% | 105 |
-| 100% | none | 82.5% | 175 |
+| 30% | 0.98 | 99.1% | 9 |
+| 50% | 0.85 | 96.6% | 34 |
+| 60% | 0.77 | 94.5% | 55 |
+| 70% | 0.69 | 91.9% | 81 |
+| 80% | 0.61 | 89.0% | 110 |
+| 90% | 0.53 | 85.7% | 143 |
+| 100% | none | 82.1% | 179 |
 
-Per decision shape, at 95% accuracy or better: routing over many options clears
-the whole stream, while yes/no and small choices clear about half of it.
+How much of each decision shape can go through while accuracy on what went
+through stays at 95% or better:
+
+| Decision shape | n | Share answered | Threshold |
+| --- | --- | --- | --- |
+| choice | 6565 | 94% | 0.57 |
+| boolean | 14181 | 49% | 0.82 |
+| scale | 6000 | 24% | 0.83 |
+
+Routing over many options is the shape that clears, because naming one option
+out of many is a question the model answers well. Ordinal scales are the shape
+that does not: a five-level review score is a genuinely harder judgement and
+three quarters of it still needs a person at this accuracy bar.
 
 ## Training data
 
