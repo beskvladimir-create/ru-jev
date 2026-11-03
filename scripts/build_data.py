@@ -333,7 +333,17 @@ def rows_simple(hf_id, task, dtype, text_col, label_col, options, val_fraction=0
             if ans < 0 or ans >= len(options):
                 continue
             pool.append((str(r[text_col]), ans))
-    random.shuffle(pool)
+    # Разделение на train и val обязано зависеть ТОЛЬКО от имени задачи. Раньше
+    # пул перемешивался общим генератором, засеянным один раз на весь файл, а он
+    # расходуется всем кодом подряд. Стоило добавить задаче выше новый стиль
+    # меток, как random.choice начинал брать другое число бит, поток расходился,
+    # и у всех задач НИЖЕ по списку валидация оказывалась другой. Из-за этого
+    # сравнение v1.1 с v1.3 на rucola и mera_qa вышло бессмысленным: около 90%
+    # валидационных строк новой сборки лежали у старой модели в обучении, и её
+    # 0.909 на rucola это оценка на своих же обучающих данных. Теперь сдвиг
+    # формулировок в одной задаче не двигает разделение ни в одной другой.
+    srng = random.Random(f"split:{task}")
+    srng.shuffle(pool)
     if cap and len(pool) > cap:
         pool = pool[:cap]
     n_val = max(1, int(len(pool) * val_fraction)) if pool else 0
@@ -397,7 +407,10 @@ def rows_massive(hf_id, task, n_options=5, cap=12000, label_styles=None):
         if split_name not in ds:
             continue
         rows = list(ds[split_name])
-        random.shuffle(rows)
+        # Валидация здесь из источниковых validation и test, в обучение идёт
+        # только train, так что пересечения не было никогда. Но какие строки
+        # выживут под cap, тоже не должно зависеть от чужих правок.
+        random.Random(f"split:{task}:{split_name}").shuffle(rows)
         if dest == "train" and cap:
             rows = rows[:cap]
         elif dest == "val":
@@ -446,8 +459,9 @@ def rows_mera(configs=("ruopenbookqa", "ruworldtree"), task="mera_qa"):
             except Exception:
                 continue
         print(f"[ok] MERA/{cfg}: {n} examples")
-    # carve a validation slice out of the train pool
-    random.shuffle(out["train"])
+    # carve a validation slice out of the train pool. Своё зерно, не общий
+    # поток: причина та же, что в rows_simple.
+    random.Random(f"split:{task}").shuffle(out["train"])
     n_val = max(1, int(len(out["train"]) * 0.1))
     out["val"] = out["train"][:n_val]
     out["train"] = out["train"][n_val:]
