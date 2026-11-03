@@ -42,12 +42,21 @@ def _retry(fn, attempts=4, base=5.0):
     стоить прогона, поэтому пробуем несколько раз с растущей паузой.
     """
     import time
+    # Повторять стоит только то, что может пройти со второй попытки. RuCoLA
+    # отдаётся скриптом, который datasets 4 больше не исполняет, и это не
+    # случайность: три повтора с паузами ушли впустую, пока не сработал переход
+    # на parquet-ветку. Такие ошибки пробрасываем сразу.
+    FINAL = ("Dataset scripts are no longer supported",
+             "doesn't exist on the Hub",
+             "Couldn't find any data file")
     last = None
     for i in range(attempts):
         try:
             return fn()
         except Exception as e:
             last = e
+            if any(m in str(e) for m in FINAL):
+                raise
             if i + 1 < attempts:
                 print(f"[retry {i + 1}/{attempts - 1}] {type(e).__name__}: {e}", flush=True)
                 time.sleep(base * (2 ** i))
