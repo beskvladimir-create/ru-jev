@@ -14,6 +14,7 @@ import json
 import os
 import random
 import sys
+import zlib
 
 import torch
 import torch.nn as nn
@@ -80,12 +81,61 @@ class Scorer(nn.Module):
                          .last_hidden_state[:, 0]).squeeze(-1)
 
 
+def build_cases(n, n_options):
+    """The bench rows, identical for every vocabulary and every model."""
+    ds = load_any("mteb/amazon_massive_scenario", "ru")
+    split = "validation" if "validation" in ds else list(ds)[0]
+    rows = [r for r in ds[split] if r.get("label") in SCENARIO_RU]
+    random.seed(13)
+    random.shuffle(rows)
+    rows = rows[:n]
+    labels = sorted(SCENARIO_RU)
+    cases = []
+    for r in rows:
+        gold = r["label"]
+        others = [l for l in labels if l != gold]
+        cases.append((str(r["text"]), gold,
+                      random.sample(others, min(n_options - 1, len(others)))))
+    return cases
+
+
+def dump_rows(args):
+    """Write every vocabulary's rendered options so another model can be scored
+    on exactly these rows. The option order is seeded from a stable checksum of
+    the text, not from hash(), which is salted per process."""
+    cases = build_cases(args.n, args.options)
+    written = 0
+    with open(args.dump, "w", encoding="utf-8") as fh:
+        for name, table, seen in VOCABS:
+            def surface(lab):
+                return table[lab] if table else lab.replace("_", " ")
+            for text, gold, distract in cases:
+                opts = [surface(gold)] + [surface(d) for d in distract]
+                order = list(range(len(opts)))
+                random.Random(zlib.crc32(text.encode("utf-8"))).shuffle(order)
+                fh.write(json.dumps({
+                    "vocab": name, "seen_from": seen, "text": text,
+                    "gold_label": gold, "gold_clean": gold in CLEAN,
+                    "options": [opts[i] for i in order],
+                    "answer": order.index(0),
+                }, ensure_ascii=False) + "\n")
+                written += 1
+    print(f"строк выгружено: {written} в {args.dump}")
+    print(f"словарей: {len(VOCABS)}  вопросов на словарь: {len(cases)}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
     ap.add_argument("--n", type=int, default=600, help="questions per vocabulary")
     ap.add_argument("--options", type=int, default=5)
+    ap.add_argument("--dump", help="write the rendered rows to this JSONL and exit; "
+                                   "lets another model be scored on byte-identical rows")
     args = ap.parse_args()
+
+    if args.dump:
+        dump_rows(args)
+        return
 
     calib = json.load(open(os.path.join(args.model, "calibration.json")))
     T = float(calib.get("temperature", 1.0))
@@ -94,22 +144,10 @@ def main():
     model = Scorer(args.model).eval()
     torch.set_num_threads(os.cpu_count())
 
-    ds = load_any("mteb/amazon_massive_scenario", "ru")
-    split = "validation" if "validation" in ds else list(ds)[0]
-    rows = [r for r in ds[split] if r.get("label") in SCENARIO_RU]
-    random.seed(13)
-    random.shuffle(rows)
-    rows = rows[:args.n]
-    labels = sorted(SCENARIO_RU)
-
     # Same questions and same distractors for every vocabulary, so the only
-    # thing that changes between columns is the wording.
-    cases = []
-    for r in rows:
-        gold = r["label"]
-        others = [l for l in labels if l != gold]
-        cases.append((str(r["text"]), gold,
-                      random.sample(others, min(args.options - 1, len(others)))))
+    # thing that changes between columns is the wording. Built in one place so
+    # that --dump and the scorer below can never drift apart.
+    cases = build_cases(args.n, args.options)
 
     print(f"модель: {args.model}  T={T}  вопросов на словарь: {len(cases)}\n")
     print("| словарь | есть в обучении с | верно | средняя уверенность | уверенно неверно |")
@@ -125,7 +163,7 @@ def main():
             for text, gold, distract in cases:
                 opts = [surface(gold)] + [surface(d) for d in distract]
                 order = list(range(len(opts)))
-                random.Random(hash(text) & 0xffff).shuffle(order)
+                random.Random(zlib.crc32(text.encode("utf-8"))).shuffle(order)
                 shuffled = [opts[i] for i in order]
                 answer = order.index(0)
                 enc = tok([text] * len(shuffled), shuffled, truncation=True,
