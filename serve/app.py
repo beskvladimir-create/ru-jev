@@ -7,8 +7,10 @@ decision API moves over by changing the base URL. Decisions are computed locally
 on CPU by the Ru-Jev scoring model, so the text never leaves the host.
 
 Run: uvicorn serve.app:app --host 0.0.0.0 --port 8080
-Model dir via RU_JEV_MODEL env; by default out/ru-jev-v1 if present,
-otherwise the released weights in ../model/ru-jev-v1.
+Weights via RU_JEV_MODEL, which takes a local directory or a Hub repo id. With
+it unset the service prefers a fresh training output, then released weights
+sitting next to this repository, and otherwise downloads besktech/ru-jev from
+the Hub, so a clone of this repository alone is enough to start.
 """
 import os, json
 from typing import Any, Dict, List
@@ -19,15 +21,21 @@ from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModel
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# Prefer a fresh training output, then the released weights that live next to
-# this repo (../../model/ru-jev-v1). Override with RU_JEV_MODEL.
+HUB_REPO = "besktech/ru-jev"
+# Prefer a fresh training output, then released weights sitting next to this
+# repository. Those paths exist on the author's machine and not in a clone, so
+# when neither is there the weights come from the Hub instead of failing with a
+# missing-file error. Override everything with RU_JEV_MODEL, which accepts a
+# local directory or a Hub repo id.
 _CANDIDATES = (
-    os.path.join(HERE, "..", "out", "ru-jev-v1"),
-    os.path.join(HERE, "..", "..", "model", "ru-jev-v1"),
+    os.path.join(HERE, "..", "out", "ru-jev-v1.3"),
+    os.path.join(HERE, "..", "..", "model", "ru-jev-v1.3", "ship"),
 )
-MODEL_DIR = os.environ.get("RU_JEV_MODEL") or next(
-    (p for p in _CANDIDATES if os.path.isdir(p)), _CANDIDATES[0])
-MODEL_DIR = os.path.normpath(MODEL_DIR)
+MODEL_SOURCE = os.environ.get("RU_JEV_MODEL") or next(
+    (os.path.normpath(p) for p in _CANDIDATES if os.path.isdir(p)), HUB_REPO)
+# Resolved to a real directory on first load. Downloading at import time would
+# make importing this module hit the network, which breaks tests and tooling.
+MODEL_DIR = MODEL_SOURCE if os.path.isdir(MODEL_SOURCE) else None
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -51,9 +59,12 @@ _MAX_LEN = 256
 
 
 def _load():
-    global _tok, _model, _T, _MAX_LEN
+    global _tok, _model, _T, _MAX_LEN, MODEL_DIR
     if _model is not None:
         return
+    if MODEL_DIR is None:
+        from huggingface_hub import snapshot_download
+        MODEL_DIR = snapshot_download(MODEL_SOURCE)
     calib = json.load(open(os.path.join(MODEL_DIR, "calibration.json")))
     _T = float(calib.get("temperature", 1.0))
     _MAX_LEN = int(calib.get("max_len", 256))
@@ -98,7 +109,7 @@ class DecideRequest(BaseModel):
 @app.get("/health")
 def health():
     _load()
-    return {"status": "ok", "model": MODEL_DIR, "device": DEVICE,
+    return {"status": "ok", "model": MODEL_SOURCE, "path": MODEL_DIR, "device": DEVICE,
             "max_len": _MAX_LEN, "temperature": _T}
 
 

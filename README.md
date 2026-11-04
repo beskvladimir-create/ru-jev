@@ -130,9 +130,11 @@ pip install -r serve/requirements.txt
 uvicorn serve.app:app --host 0.0.0.0 --port 8080
 ```
 
-The service looks for `out/ru-jev-v1`, then for released weights in
-`../model/ru-jev-v1`. Set `RU_JEV_MODEL` to point it anywhere else. Decisions are
-computed locally, so the text never leaves the host.
+With nothing configured the service downloads `besktech/ru-jev` from the Hub on
+first request, so a clone of this repository is enough to start it. It prefers a
+local `out/ru-jev-v1.3` or `../model/ru-jev-v1.3/ship` when either exists. Set
+`RU_JEV_MODEL` to a directory or a Hub repo id to override. Decisions are computed
+locally, so the text never leaves the host.
 
 `POST /v1/systemone` takes `{model, state, questions}` and returns
 `{model, answers, usage, providerMetadata}`, with confidence per question under
