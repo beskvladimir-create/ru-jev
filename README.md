@@ -12,7 +12,9 @@ closed perimeter where sending data to an external API is not allowed.
 - Project page: https://ru-jev.besk.tech
 
 **Not affiliated with TypeSafe AI. Not trained on Jev outputs.** Ru-Jev is trained
-from scratch on open, human-labelled datasets. The name is a play on the category,
+independently. The scoring head is trained from random initialisation and the
+mmBERT-base backbone is fine-tuned along with it, on open, human-labelled
+datasets only. The name is a play on the category,
 not a claim of compatibility or endorsement.
 
 ## How it works

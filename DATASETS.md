@@ -21,6 +21,13 @@ permit commercial use go into the build. Non-commercial sets are excluded.
   trained on them, the corpus itself is not redistributed. Controlled by the
   `include_rucola` flag, on by default, switch it off with `--no-rucola` for the
   cleanest possible licence position.
+- **Georeview.** The MTEB card is MIT and the upstream Yandex repository ships an
+  unmodified MIT `LICENSE.md`, which grants the right to use, sell and
+  sublicense without restriction. The upstream README separately asks readers to
+  "use it for academic and research purposes". That sentence sits in the README,
+  not in the licence, and does not narrow the grant, so the set stays in the
+  build. Stated as what the two files say, not as a legal opinion. Checked
+  2026-11-04.
 - **RuReviews.** The MTEB package is Apache-2.0, the original source is
   `github.com/sismetanin/rureviews`. Training on the labels is sufficient for the
   release.
