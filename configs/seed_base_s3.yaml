@@ -1,0 +1,18 @@
+# Сид-прогон 3 рецепта v1.1 (без формулировок, baseline). Данные это сохранённая
+# сборка v1.1, пересобрать её нечем: у сборщика нет флага отключения формулировок,
+# старый сборщик остался в коммите 8724054. На шести задачах SuperGLUE эти строки
+# совпадают с текущей сборкой на 100 процентов и по текстам, и по вариантам.
+# ВАЖНО при подаче: это переобученный baseline, а НЕ выложенная v1.1.
+base_model: jhu-clsp/mmBERT-base
+out_dir: out/seed-base-s3
+data_dir: ../model/data-v1.1
+max_len: 256
+epochs: 3
+lr: 2.0e-5
+batch_examples: 16
+warmup_ratio: 0.06
+weight_decay: 0.01
+seed: 2024
+include_rucola: true
+val_fraction: 0.1
+shuffle_options: true

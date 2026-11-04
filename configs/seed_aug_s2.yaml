@@ -1,0 +1,17 @@
+# Сид-прогон 2 рецепта v1.3 (с формулировками). Отличается от configs/v1_3.yaml
+# ровно одним полем seed. Данные НЕ пересобираются: берётся уже лежащая сборка,
+# иначе поменяются формулировки вариантов в строках и сравнение по шести задачам
+# перестанет быть сравнением. Релизные веса это seed 42, их не трогаем.
+base_model: jhu-clsp/mmBERT-base
+out_dir: out/seed-aug-s2
+data_dir: data
+max_len: 256
+epochs: 4
+lr: 2.0e-5
+batch_examples: 16
+warmup_ratio: 0.06
+weight_decay: 0.01
+seed: 1337
+include_rucola: true
+val_fraction: 0.1
+shuffle_options: true
