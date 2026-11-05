@@ -37,7 +37,18 @@ def nll(rows, T):
     return s / len(rows)
 
 
-def fit(rows, lo=0.25, hi=6.0, points=48, rounds=6):
+def fit_grid(rows, lo=0.2, hi=8.0, steps=300):
+    """The 301-point grid the release was prepared with.
+
+    The released 1.8640 is a point of exactly this grid: 0.2 + 7.8 * 64 / 300.
+    Using a different grid, such as the narrowing search in scripts/train.py,
+    lands a few thousandths away and would make an exact check impossible.
+    """
+    return min(((nll(rows, lo + (hi - lo) * i / steps), lo + (hi - lo) * i / steps)
+                for i in range(steps + 1)))[1]
+
+
+def fit_narrow(rows, lo=0.25, hi=6.0, points=48, rounds=6):
     """Coarse grid then narrowing, the criterion scripts/train.py uses."""
     best = 1.0
     for _ in range(rounds):
@@ -54,7 +65,12 @@ def from_dump(path):
         if not line.strip():
             continue
         r = json.loads(line)
-        out.append((r["logits"], int(r["answer"])))
+        # score_rows.py writes "logits"; the dump the release was prepared from
+        # writes "scores". Both are raw scores before any temperature.
+        sc = r.get("logits", r.get("scores"))
+        if sc is None:
+            raise SystemExit("no raw scores in the dump: expected logits or scores")
+        out.append((sc, int(r["answer"])))
     return out
 
 
@@ -107,6 +123,14 @@ def main():
     ap.add_argument("--rows", help="validation rows, scored here if --scores is absent")
     ap.add_argument("--tolerance", type=float, default=0.01,
                     help="how far the refit may fall from the recorded value")
+    ap.add_argument("--grid", choices=("release", "trainer"), default="release",
+                    help="which temperature search to use: the 301-point grid the "
+                         "release was prepared with, or the narrowing search in "
+                         "train.py")
+    ap.add_argument("--seed", type=int, default=17,
+                    help="half-split seed. The released temperature was fitted on "
+                         "one half of the validation split with seed 17, so the "
+                         "default reproduces it; 0 fits on every row instead")
     a = ap.parse_args()
 
     if not a.scores and not a.rows:
@@ -115,15 +139,27 @@ def main():
 
     recorded = json.load(open(os.path.join(a.model, "calibration.json")))
     expected = float(recorded["temperature"])
-    T = fit(rows)
+
+    # The released temperature was fitted on one half of the validation split,
+    # not on all of it, so the check has to use the same half. Fitting on every
+    # row gives a different number and would fail a comparison that is correct.
+    if a.seed:
+        import random
+        order = list(range(len(rows)))
+        random.Random(a.seed).shuffle(order)
+        fit_rows = [rows[i] for i in order[:len(order) // 2]]
+    else:
+        fit_rows = rows
+    T = (fit_grid if a.grid == "release" else fit_narrow)(fit_rows)
     acc = sum(lg.index(max(lg)) == ans for lg, ans in rows) / len(rows)
 
-    print(f"\nrows {len(rows)}")
+    print(f"\nrows {len(rows)}, temperature fitted on {len(fit_rows)}")
     print(f"accuracy {acc:.4f} (independent of the temperature)")
     print(f"recorded temperature {expected:.4f}  (calibration.json, epoch "
           f"{recorded.get('epoch', 'not stated')})")
     print(f"refitted temperature {T:.4f}")
-    print(f"difference {abs(T - expected):.4f}, NLL at the refit {nll(rows, T):.4f}")
+    print(f"difference {abs(T - expected):.4f}, grid {a.grid}, "
+          f"NLL at the refit {nll(fit_rows, T):.4f}")
     if abs(T - expected) <= a.tolerance:
         print(f"\nOK: within {a.tolerance}")
         return 0

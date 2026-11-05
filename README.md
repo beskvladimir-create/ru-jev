@@ -41,18 +41,28 @@ table gave one of them under the other's row count.
 
 | Metric | Rows | Value |
 | --- | --- | --- |
-| Accuracy (micro), whole validation split | 26,746 | 0.8181 |
-| Accuracy (micro), half held out from temperature fitting | 13,373 | 0.823 |
+| Accuracy (micro), whole validation split, as the trainer measured it | 26,746 | 0.8181 |
+| Accuracy (micro), whole validation split, standalone scoring pass | 26,746 | 0.8208 |
+| Accuracy (micro), half held out from temperature fitting | 13,373 | 0.8234 |
 | ECE, temperature fitted on the disjoint half | 13,373 | 0.0185 |
 | ECE, temperature fitted on the same rows | 13,373 | 0.0159 |
 | Released temperature | | 1.8640 |
 
-The whole-split figure, 0.8181, is the one in the training trajectory of the
-model card and in the preprint; the half-split figure, 0.823, is the one the
-coverage table is built on, because the temperature has to come from rows the
-curve is not scored on. The temperature is fitted on one half and the
-calibration error is reported on the other, so it is an estimate for new data
-rather than a fit to these rows.
+Three accuracy figures on one checkpoint, counting different things. 0.8181 is
+what the training run itself reported at the end of epoch 3 and is the figure in
+the trajectory table of the model card and in the paper. 0.8208 is a separate
+scoring pass over the same rows: it differs by 72 decisions out of 26,746,
+because the trainer pads every candidate of a batch of sixteen to the longest
+sequence in it while the scoring pass pads within one decision, and two percent
+of these rows have less than 0.1 between their top two candidates. 0.8234 is the
+half held out from temperature fitting, and it is the figure the coverage table
+is built on, because the temperature has to come from rows the curve is not
+scored on.
+
+`results/validation/README.md` sets all three out, and also records why the
+mixture cannot simply be rebuilt to recheck them: six of the thirteen tasks
+reproduce their split exactly and seven do not, so a rebuilt validation row can
+be a row the release trained on.
 
 The earlier table here reported an ECE of 0.0054, which was fitted and scored on
 the same rows. That figure is in-sample and optimistic, and it should not be

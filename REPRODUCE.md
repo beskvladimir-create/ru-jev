@@ -134,12 +134,18 @@ twice. The temperature and ECE rows of that table:
 
 ### Coverage against accuracy (Table 5)
 
-    python scripts/score_rows.py --model weights/v1.3 --rows data/val.jsonl \
-        --out results/validation/val_v13.jsonl --tag ru-jev-v1.3
-    python scripts/coverage.py results/validation/val_v13.jsonl
+    python scripts/coverage.py results/validation/val_v13_trainsplit.jsonl
 
-The temperature is fitted on one half and the curve built on the other. The
-split seed is recorded in the output.
+Reproduces the table to the last digit. The temperature is fitted on one half and
+the curve is built on the other; the split seed defaults to 17, the value the
+release was prepared with, and it is part of the published result.
+
+Do not rebuild the mixture to redo this. Six of the thirteen tasks reproduce
+their train/validation split exactly and seven do not, so a rebuilt validation
+row can be a row the release trained on: scoring the released checkpoint on a
+rebuilt split gives 0.8540 instead of 0.8208 and refits the temperature to
+1.5222 instead of 1.8640. `results/validation/README.md` has the per-task
+numbers.
 
 ### Latency (Table 6)
 
@@ -155,10 +161,13 @@ Median of 25 runs after 5 discarded warm-up runs, at 2, 5 and 18 candidates.
 ### The released temperature
 
     python scripts/verify_temperature.py --model weights/v1.3 \
-        --scores results/validation/val_v13.jsonl
+        --scores results/validation/val_v13_trainsplit.jsonl
 
-Refits the temperature with the trainer's criterion and compares it with the
-1.8640 in `calibration.json`.
+Refits the temperature and compares it with the 1.8640 in `calibration.json`.
+The difference is 0.0000. Two defaults make that exact: the half-split seed 17,
+and the 301-point grid `0.2 + 7.8 i / 300`, of which the released value is a
+point. `--grid trainer` uses the narrowing search in `train.py` instead and
+lands 0.005 away.
 
 ### Fitting a temperature on your own labels
 

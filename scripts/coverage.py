@@ -4,6 +4,10 @@
 The temperature is fitted on one half of the rows and the curve is built on the
 other, so the threshold is not chosen on the same data it is scored on.
 
+The half-split seed is part of the published result: with 17, the seed the
+release was prepared with, this reproduces the temperature 1.8640, the accuracy
+0.8234 and the coverage table of the paper exactly.
+
 Accuracy does not depend on the temperature, because the softmax over candidates
 is monotone in it and the argmax does not move. The temperature decides where a
 given coverage level falls, not how many answers are right.
@@ -56,8 +60,11 @@ def fit_temperature(rows, lo=0.2, hi=8.0, steps=300):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("rows", help="per-row scores from score_rows.py")
-    ap.add_argument("--seed", type=int, default=20261105,
-                    help="seed of the half-split, recorded in the output")
+    ap.add_argument("--seed", type=int, default=17,
+                    help="seed of the half-split, recorded in the output. 17 is "
+                         "the value the released temperature and the published "
+                         "coverage table were produced with; changing it moves "
+                         "the curve by a few thousandths")
     ap.add_argument("--target", type=float, default=0.95,
                     help="accuracy floor for the per-shape table")
     a = ap.parse_args()
