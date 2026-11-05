@@ -30,9 +30,15 @@ checkpoints was competing for the GPU.
 Every figure in the paper other than the training trajectory was produced on
 CPU, on one and the same machine.
 
+The thread count matters for the latency table and for nothing else. The figures
+in the paper use every core. An earlier measurement pinned to four threads, which
+is where the 25 ms quoted on the project site comes from, against 18.5 ms here
+for the same two-candidate decision.
+
 | Item | Value |
 |---|---|
-| Machine | Apple M4 |
+| Machine | Apple M4, 10 cores (4 performance, 6 efficiency) |
+| Threads | `torch.set_num_threads(os.cpu_count())`, so all 10 |
 | Precision | float32 |
 | torch | 2.8.0 |
 | transformers | 5.22.1 |
