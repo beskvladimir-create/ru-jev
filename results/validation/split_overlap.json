@@ -1,0 +1,91 @@
+{
+ "earlier": "../model/data-stale-prejargon",
+ "rebuilt": "data",
+ "identity": "task + context string",
+ "tasks": {
+  "danetqa": {
+   "n": 821,
+   "kept": 821,
+   "leaked": 0,
+   "new": 0
+  },
+  "parus": {
+   "n": 100,
+   "kept": 100,
+   "leaked": 0,
+   "new": 0
+  },
+  "rcb": {
+   "n": 220,
+   "kept": 220,
+   "leaked": 0,
+   "new": 0
+  },
+  "russe": {
+   "n": 8505,
+   "kept": 8505,
+   "leaked": 0,
+   "new": 0
+  },
+  "rwsd": {
+   "n": 204,
+   "kept": 204,
+   "leaked": 0,
+   "new": 0
+  },
+  "terra": {
+   "n": 307,
+   "kept": 307,
+   "leaked": 0,
+   "new": 0
+  },
+  "massive_intent": {
+   "n": 3000,
+   "kept": 1885,
+   "leaked": 54,
+   "new": 1061
+  },
+  "massive_scenario": {
+   "n": 3000,
+   "kept": 1897,
+   "leaked": 61,
+   "new": 1042
+  },
+  "toxicity": {
+   "n": 3000,
+   "kept": 57,
+   "leaked": 522,
+   "new": 2421
+  },
+  "rureviews": {
+   "n": 3000,
+   "kept": 167,
+   "leaked": 1314,
+   "new": 1519
+  },
+  "georeview": {
+   "n": 3000,
+   "kept": 159,
+   "leaked": 1382,
+   "new": 1459
+  },
+  "rucola": {
+   "n": 1344,
+   "kept": 133,
+   "leaked": 1211,
+   "new": 0
+  },
+  "mera_qa": {
+   "n": 245,
+   "kept": 22,
+   "leaked": 223,
+   "new": 0
+  }
+ },
+ "total": {
+  "n": 26746,
+  "kept": 14477,
+  "leaked": 4767,
+  "new": 7502
+ }
+}

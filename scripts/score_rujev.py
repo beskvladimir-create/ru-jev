@@ -10,7 +10,7 @@ Two row formats are accepted:
   task validation:  input, options, answer  (+ task, decision_type)
 
 Usage:
-  python scripts/score_rows.py --model model/ru-jev-v1.3/ship \\
+  python scripts/score_rujev.py --model model/ru-jev-v1.3/ship \\
       --rows data/val.jsonl --out val_v13.jsonl --tag ru-jev-v1.3
 """
 import argparse

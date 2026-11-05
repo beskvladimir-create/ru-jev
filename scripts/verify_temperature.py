@@ -65,7 +65,7 @@ def from_dump(path):
         if not line.strip():
             continue
         r = json.loads(line)
-        # score_rows.py writes "logits"; the dump the release was prepared from
+        # score_rujev.py writes "logits"; the dump the release was prepared from
         # writes "scores". Both are raw scores before any temperature.
         sc = r.get("logits", r.get("scores"))
         if sc is None:
@@ -119,7 +119,7 @@ def from_model(model, rows_path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True, help="checkpoint directory")
-    ap.add_argument("--scores", help="precomputed per-row scores from score_rows.py")
+    ap.add_argument("--scores", help="precomputed per-row scores from score_rujev.py")
     ap.add_argument("--rows", help="validation rows, scored here if --scores is absent")
     ap.add_argument("--tolerance", type=float, default=0.01,
                     help="how far the refit may fall from the recorded value")

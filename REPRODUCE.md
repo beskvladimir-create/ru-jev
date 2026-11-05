@@ -100,7 +100,7 @@ than held-out wordings.
 ### Unseen datasets (Table 3)
 
     python scripts/build_unseen.py --headline <headline test jsonl> --out /tmp/unseen_rows.jsonl
-    python scripts/score_rows.py --model weights/v1.3 --rows /tmp/unseen_rows.jsonl \
+    python scripts/score_rujev.py --model weights/v1.3 --rows /tmp/unseen_rows.jsonl \
         --out /tmp/unseen_v13.jsonl --tag ru-jev-v1.3
     peer/bin/python scripts/score_laya.py --rows /tmp/unseen_rows.jsonl \
         --out /tmp/unseen_laya.jsonl --instr-id A \
@@ -113,9 +113,9 @@ than held-out wordings.
 
     python scripts/build_comparable.py --val-v13 data/val.jsonl \
         --val-v11 <v1.1 mixture>/val.jsonl --out /tmp/comparable_rows.jsonl
-    python scripts/score_rows.py --model weights/v1.1 --rows /tmp/comparable_rows.jsonl \
+    python scripts/score_rujev.py --model weights/v1.1 --rows /tmp/comparable_rows.jsonl \
         --out /tmp/comparable_v11.jsonl --tag v11
-    python scripts/score_rows.py --model weights/v1.3 --rows /tmp/comparable_rows.jsonl \
+    python scripts/score_rujev.py --model weights/v1.3 --rows /tmp/comparable_rows.jsonl \
         --out /tmp/comparable_v13.jsonl --tag v13
     python scripts/compare_rows.py --rows results/fix18/comparable_rows.jsonl \
         --a "v11=results/fix18/comparable_v11.jsonl" \
@@ -186,12 +186,29 @@ the permutation left by the previous one and the result depended on the order of
 rows in the file. `aggregate.py` and `unseen_table.py` now call `calib.py` rather
 than carrying their own copy.
 
-## What is not here
+## Seed variation
 
-The per-row scores of the seed-variation experiment are not included: they come
-to 35 MB and nothing in the paper rests on them. What they showed, and the
-mistake that made the first version of that experiment void, is written up in
+    results/seeds/*_bench.jsonl
+
+Five extra training runs, 6000 bench rows each, raw logits. Two are valid second
+and third seeds of the v1.1 recipe and give the seed spread quoted in the
+Limitations section; three were trained on a stale mixture and are not seeds of
+v1.3. `results/seeds/README.md` has the per-vocabulary table and says which is
+which. Their validation scores are not included, 35 MB of a mixture no release
+was built from; the mistake that made the experiment void is written up in
 `results/seeds/НАЙДЕНО.md` (in Russian).
+
+## Split stability of a rebuilt mixture
+
+    python scripts/split_overlap.py --earlier <earlier build> --rebuilt data \
+        --json results/validation/split_overlap.json
+
+Prints, per task, how much of a rebuilt validation split was in the earlier
+training split. `results/validation/split_overlap.md` holds the run behind the
+table in the paper, with the hashes of both builds and the check that the earlier
+build is the split the release was evaluated on.
+
+## What is not here
 
 The one-off scripts that drove the rented GPU and the releases are not here
 either. Fourteen of them read secrets by name and carry machine access details,

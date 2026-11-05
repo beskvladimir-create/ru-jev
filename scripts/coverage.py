@@ -12,7 +12,7 @@ Accuracy does not depend on the temperature, because the softmax over candidates
 is monotone in it and the argmax does not move. The temperature decides where a
 given coverage level falls, not how many answers are right.
 
-Input: one JSON object per decision, as written by score_rows.py, with raw
+Input: one JSON object per decision, as written by score_rujev.py, with raw
 logits and the index of the correct candidate:
 
   {"logits": [...], "answer": 0, "task": "russe"}
@@ -39,7 +39,7 @@ def softmax(xs, T):
 
 
 def scores_of(r):
-    """Raw scores for a row. score_rows.py writes "logits"; "scores" is accepted
+    """Raw scores for a row. score_rujev.py writes "logits"; "scores" is accepted
     for older dumps, and "probs" for a model that returns probabilities."""
     for key in ("logits", "scores"):
         if key in r:
@@ -59,7 +59,7 @@ def fit_temperature(rows, lo=0.2, hi=8.0, steps=300):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("rows", help="per-row scores from score_rows.py")
+    ap.add_argument("rows", help="per-row scores from score_rujev.py")
     ap.add_argument("--seed", type=int, default=17,
                     help="seed of the half-split, recorded in the output. 17 is "
                          "the value the released temperature and the published "

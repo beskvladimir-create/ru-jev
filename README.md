@@ -116,12 +116,13 @@ scripts/train.py       scoring head + temperature calibration
 scripts/eval.py        per-task accuracy and ECE
 scripts/probe.py       capability probe on realistic requests, compares two checkpoints
 scripts/robustness.py  the wording bench: one vocabulary of labels per column
-scripts/score_rows.py  scores a checkpoint over a file of decisions, writes raw logits
+scripts/score_rujev.py  scores a checkpoint over a file of decisions, writes raw logits
 scripts/score_laya.py  the same for the comparison model
 scripts/calib.py       temperature and ECE over half-splits, with a recorded seed
 scripts/coverage.py    coverage against accuracy, threshold on confidence
 scripts/latency.py     latency per decision at 2, 5 and 18 candidates
 scripts/overlap.py     audits a probe vocabulary against the training mixtures
+scripts/split_overlap.py  how much of a rebuilt validation split was trained on
 scripts/build_*.py     builds the rows of each probe
 scripts/table_*.py     the summary tables of each probe
 scripts/aggregate.py   the five-candidate wording bench as the model card reports it
@@ -137,6 +138,11 @@ ENVIRONMENT.md         hardware, package versions, GPU time
 DATASETS.md            sources, licences, pinned revisions and what is excluded
 SHA256SUMS             hashes of the files here; SHA256SUMS.weights for the weights
 ```
+
+During the work two scripts carried other names, which appear in the logs and in
+earlier notes: `score_one.py` was `scripts/score_rujev.py` as it ran on the rented
+machine, and `score_rows.py` was the same file after it was moved here. There is
+one implementation and it is `scripts/score_rujev.py`.
 
 ## Training
 

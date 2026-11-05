@@ -50,23 +50,34 @@ scoring the same released checkpoint, gives 0.8540 on 26,746 rows and refits the
 temperature to 1.5222 instead of 1.8640. The reason is contamination, not a
 better model: a rebuilt validation row can be a row the release trained on.
 
-Per task, comparing a rebuild against the earlier build:
+Per task, measured by `scripts/split_overlap.py` and recorded in full with the
+hashes of both builds in `split_overlap.md`. A row is identified by its task and
+its context string, never by the option wordings, since those are what the
+builder changes between versions.
 
 | Task | Rows in the rebuilt validation | Same rows as before | Rebuilt validation rows that were in the earlier training set |
 |---|---|---|---|
-| danetqa | 819 | 100% | 0% |
-| parus | 100 | 100% | 0% |
-| rcb | 220 | 100% | 0% |
-| russe | 8,505 | 100% | 0% |
-| rwsd | 204 | 100% | 0% |
-| terra | 307 | 100% | 0% |
-| massive_intent | 2,938 | 62% | 6% |
-| massive_scenario | 2,929 | 62% | 6% |
-| toxicity | 2,999 | 2% | 17% |
-| rureviews | 3,000 | 6% | 44% |
-| georeview | 3,000 | 6% | 46% |
-| rucola | 1,344 | 10% | 90% |
-| mera_qa | 245 | 9% | 92% |
+| danetqa | 821 | 100.0% | 0.0% |
+| parus | 100 | 100.0% | 0.0% |
+| rcb | 220 | 100.0% | 0.0% |
+| russe | 8,505 | 100.0% | 0.0% |
+| rwsd | 204 | 100.0% | 0.0% |
+| terra | 307 | 100.0% | 0.0% |
+| massive_intent | 3,000 | 62.8% | 1.8% |
+| massive_scenario | 3,000 | 63.2% | 2.0% |
+| toxicity | 3,000 | 1.9% | 17.4% |
+| rureviews | 3,000 | 5.6% | 43.8% |
+| georeview | 3,000 | 5.3% | 46.1% |
+| rucola | 1,344 | 9.9% | 90.1% |
+| mera_qa | 245 | 9.0% | 91.0% |
+| all | 26,746 | 54.1% | 17.8% |
+
+The rows that are in neither earlier split, 28.0% overall, are rows the source
+dataset revision itself moved.
+
+An earlier version of this file gave this table from a one-off computation with a
+different row identity, which reported massive at 6% leaked and mera_qa at 92%.
+The numbers above come from the published script and are the ones to use.
 
 The six tasks that reproduce exactly are the six the paper compares the two
 releases on, which is why that comparison reproduces to the row. The other seven
@@ -75,6 +86,12 @@ capped, and their split does not survive a change of dataset revision or of the
 `datasets` version. The builder's per-task seeding keeps a wording change in one
 task from moving another task's split, which it does; it cannot keep the split
 fixed when the source rows underneath it move.
+
+That the earlier build really does hold the split the release was measured on is
+checked, not assumed: its 26,746 validation rows match this dump row for row on
+task, correct index and candidate count, and rescoring the first 60 of them with
+the released checkpoint reproduces the published scores to 0.000017. The proof is
+in `split_overlap.md`.
 
 The practical consequence: for anything measured on the model's own validation
 split, use this dump. A rebuild is fine for the six comparable tasks and for the
