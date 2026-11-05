@@ -51,7 +51,7 @@ temperature to 1.5222 instead of 1.8640. The reason is contamination, not a
 better model: a rebuilt validation row can be a row the release trained on.
 
 Per task, measured by `scripts/split_overlap.py` and recorded in full with the
-hashes of both builds in `split_overlap.md`. A row is identified by its task and
+hashes of every build in `split_overlap.md`. A row is identified by its task and
 its context string, never by the option wordings, since those are what the
 builder changes between versions.
 
@@ -78,6 +78,10 @@ dataset revision itself moved.
 An earlier version of this file gave this table from a one-off computation with a
 different row identity, which reported massive at 6% leaked and mera_qa at 92%.
 The numbers above come from the published script and are the ones to use.
+
+This is not the intersection the paper's first hazard reports. That one compares
+the v1.1 build against the build after it, and `split_overlap.md` holds both runs
+side by side.
 
 The six tasks that reproduce exactly are the six the paper compares the two
 releases on, which is why that comparison reproduces to the row. The other seven
