@@ -17,6 +17,13 @@ mmBERT-base backbone is fine-tuned along with it, on open, human-labelled
 datasets only. The name is a play on the category,
 not a claim of compatibility or endorsement.
 
+## Reproducing the paper
+
+`REPRODUCE.md` says which command produces which table, `ENVIRONMENT.md`
+records the hardware and the package versions, and `DATASETS.md` pins the
+dataset revisions every figure comes from. The per-row scores of every
+experiment are in `results/`.
+
 ## How it works
 
 Every example is reduced to a context, a list of candidate options and the index of
@@ -28,20 +35,32 @@ which is what makes the returned confidence usable as a routing threshold.
 
 ## Results
 
-v1.3, measured on its own held-out validation split of 26,746 decisions. The
-temperature is fitted on one half and the calibration error reported on the
-other, so it is an estimate for new data rather than a fit to these rows.
+v1.3, measured on its own held-out validation split. Two accuracy figures,
+because they cover different numbers of rows and an earlier version of this
+table gave one of them under the other's row count.
 
-| Metric | Value |
-| --- | --- |
-| Accuracy (micro) | 0.823 |
-| ECE, temperature fitted on a disjoint half | 0.0185 |
-| ECE, temperature fitted on the same rows | 0.0159 |
-| Temperature | 1.864 |
+| Metric | Rows | Value |
+| --- | --- | --- |
+| Accuracy (micro), whole validation split | 26,746 | 0.8181 |
+| Accuracy (micro), half held out from temperature fitting | 13,373 | 0.823 |
+| ECE, temperature fitted on the disjoint half | 13,373 | 0.0185 |
+| ECE, temperature fitted on the same rows | 13,373 | 0.0159 |
+| Released temperature | | 1.8640 |
 
-The earlier table here reported 0.0054, which was fitted and scored on the same
-rows. That figure is in-sample and optimistic, and it should not be compared
-with the one above.
+The whole-split figure, 0.8181, is the one in the training trajectory of the
+model card and in the preprint; the half-split figure, 0.823, is the one the
+coverage table is built on, because the temperature has to come from rows the
+curve is not scored on. The temperature is fitted on one half and the
+calibration error is reported on the other, so it is an estimate for new data
+rather than a fit to these rows.
+
+The earlier table here reported an ECE of 0.0054, which was fitted and scored on
+the same rows. That figure is in-sample and optimistic, and it should not be
+compared with the ones above.
+
+`scripts/verify_temperature.py` refits the released temperature from the
+released weights and the validation split and checks it against the 1.8640 in
+`calibration.json`, so the figure can be rechecked rather than taken on trust.
 
 Per task:
 
@@ -71,22 +90,42 @@ Reasoning-heavy tasks (rwsd, rcb, parus) are the weak points for an encoder of t
 size.
 
 A second version was trained on xlm-roberta-large (560M), configured in
-`configs/v2.yaml`. It did not win. On the dev splits that are directly comparable it
-is worse on the reasoning tasks and on `russe`, so the published checkpoint is v1.
+`configs/v2.yaml`. It did not win: on the dev splits that are directly
+comparable it is worse on the reasoning tasks and on `russe`, so the larger
+backbone was dropped and the released line stayed on mmBERT-base.
 
 ## Layout
 
 ```
-configs/base.yaml      v1: mmBERT-base, 3 epochs (the published checkpoint)
+configs/base.yaml      v1: mmBERT-base, 3 epochs
 configs/v1_1.yaml      v1.1: same backbone, broader data mix
+configs/v1_3.yaml      v1.3: released; label wordings varied per example, 4 epochs
 configs/v2.yaml        v2: xlm-roberta-large, 4 epochs (trained, not published)
 scripts/build_data.py  builds the unified decision dataset into data/*.jsonl
 scripts/train.py       scoring head + temperature calibration
 scripts/eval.py        per-task accuracy and ECE
 scripts/probe.py       capability probe on realistic requests, compares two checkpoints
+scripts/robustness.py  the wording bench: one vocabulary of labels per column
+scripts/score_rows.py  scores a checkpoint over a file of decisions, writes raw logits
+scripts/score_laya.py  the same for the comparison model
+scripts/calib.py       temperature and ECE over half-splits, with a recorded seed
+scripts/coverage.py    coverage against accuracy, threshold on confidence
+scripts/latency.py     latency per decision at 2, 5 and 18 candidates
+scripts/overlap.py     audits a probe vocabulary against the training mixtures
+scripts/build_*.py     builds the rows of each probe
+scripts/table_*.py     the summary tables of each probe
+scripts/aggregate.py   the five-candidate wording bench as the model card reports it
+scripts/unseen_table.py  the two datasets no model trained on
+scripts/compare_rows.py  per-row comparison of two releases, with weight hashes
+scripts/verify_temperature.py  refits the released temperature and checks it
+scripts/fit_temperature.py     fits a temperature on your own decisions
 scripts/run_pipeline.sh  build, train, evaluate, probe
 serve/app.py           FastAPI service with a typed-decision endpoint
-DATASETS.md            sources, licences and what is excluded
+results/               per-row scores and tables of every experiment in the paper
+REPRODUCE.md           which command produces which table
+ENVIRONMENT.md         hardware, package versions, GPU time
+DATASETS.md            sources, licences, pinned revisions and what is excluded
+SHA256SUMS             hashes of the files here; SHA256SUMS.weights for the weights
 ```
 
 ## Training

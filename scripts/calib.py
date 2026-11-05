@@ -1,30 +1,30 @@
 #!/usr/bin/env python3
-"""Температура и ECE по половинным разбиениям, воспроизводимо.
+"""Temperature and ECE over half-splits, reproducibly.
 
-Что было не так раньше. В aggregate.py и unseen_table.py список индексов
-перемешивался НА МЕСТЕ и не сбрасывался между разбиениями:
+What was wrong before. In aggregate.py and unseen_table.py the index list was
+shuffled IN PLACE and never reset between splits:
 
     idx = list(range(len(rows)))
     for s in range(SPLITS):
-        random.Random(s).shuffle(idx)     # idx уже перемешан предыдущим шагом
+        random.Random(s).shuffle(idx)     # idx is already shuffled by the previous step
 
-Разбиение номер s получалось применением Random(s) к перестановке, оставшейся от
-s-1, то есть разбиения шли цепочкой, а не независимыми выборками. Числа при этом
-детерминированы, но зависят от порядка строк в файле, и при любом его изменении
-меняются. Поэтому значения не воспроизводились.
+Split s was therefore Random(s) applied to the permutation left by s-1: the
+splits ran as a chain rather than as independent draws. The figures were still
+deterministic, but they depended on the order of rows in the file and changed
+whenever that order did, which is why they could not be reproduced.
 
-Здесь: индексы сбрасываются на каждом разбиении, сид каждого разбиения
-выводится из записанного SPLIT_SEED, а строки предварительно ставятся в
-канонический порядок по своему содержимому, чтобы порядок строк в файле на
-результат не влиял вообще.
+Here the indices are reset on every split, each split's seed is derived from a
+recorded SPLIT_SEED, and the rows are first put in a canonical order by their
+own content, so the order of rows in the file cannot affect the result at all.
 
-Канонический ключ строки: (срез, текст, номер верного ответа). Он есть во всех
-выгрузках оценок и одинаков у всех моделей, поэтому разбиения у сравниваемых
-моделей совпадают построчно, и разница температур не содержит шума разбиения.
+The canonical key of a row is (slice, text, index of the correct answer). It is
+present in every score dump and is the same across models, so two models being
+compared get the same splits row for row and the difference in their fitted
+temperatures carries no split noise.
 """
 import argparse, hashlib, json, math, random, statistics
 
-SPLIT_SEED = 20261105        # записан; менять только с новой выгрузкой чисел
+SPLIT_SEED = 20261105        # recorded; change it only together with a new set of figures
 SPLITS = 25
 BINS = 15
 
@@ -36,7 +36,7 @@ def row_key(r):
 
 
 def canonical(rows):
-    """Порядок по sha256 ключа: не зависит от порядка строк в файле."""
+    """Order by the sha256 of the key: independent of the order in the file."""
     return sorted(rows, key=lambda r: hashlib.sha256(
         row_key(r).encode("utf-8")).hexdigest())
 
@@ -92,7 +92,7 @@ def calibration(rows):
     n = len(rows)
     ts, es = [], []
     for s in range(SPLITS):
-        idx = list(range(n))                      # сброс на каждом разбиении
+        idx = list(range(n))                      # reset on every split
         random.Random(SPLIT_SEED + s).shuffle(idx)
         h = n // 2
         T = fitT([rows[i] for i in idx[:h]])
@@ -105,9 +105,9 @@ def calibration(rows):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--scores", action="append", required=True, help="имя=путь")
+    ap.add_argument("--scores", action="append", required=True, help="name=path")
     ap.add_argument("--by-set", action="store_true",
-                    help="считать отдельно по полю set или vocab")
+                    help="report separately per set or vocab field")
     ap.add_argument("--json-out")
     a = ap.parse_args()
     data = {}
@@ -123,11 +123,11 @@ def main():
                 g = r.get("set") or r.get("vocab")
                 if g and g not in groups:
                     groups.append(g)
-    print(f"SPLIT_SEED = {SPLIT_SEED}, разбиений {SPLITS}, бинов ECE {BINS}\n")
+    print(f"SPLIT_SEED = {SPLIT_SEED}, splits {SPLITS}, ECE bins {BINS}\n")
     for g in groups:
         if g:
             print(f"## {g}\n")
-        print("| модель | n | подобранная T | T мин | T макс | ECE как есть | ECE после своей T |")
+        print("| Model | n | Fitted T | T min | T max | ECE as is | ECE after its own T |")
         print("|---|---|---|---|---|---|---|")
         for name, rows in data.items():
             rs = rows if g is None else [r for r in rows
@@ -135,14 +135,14 @@ def main():
             if not rs:
                 continue
             c = calibration(rs)
-            out[f"{g or 'все'}|{name}"] = c
+            out[f"{g or 'all'}|{name}"] = c
             print(f"| {name} | {c['n']} | {c['T_mean']:.4f} | {c['T_min']:.3f} | "
                   f"{c['T_max']:.3f} | {c['ECE_raw']:.4f} | {c['ECE_own_T']:.4f} |")
         print()
     if a.json_out:
         json.dump(out, open(a.json_out, "w", encoding="utf-8"),
                   ensure_ascii=False, indent=1)
-        print(f"числа: {a.json_out}")
+        print(f"figures: {a.json_out}")
 
 
 if __name__ == "__main__":

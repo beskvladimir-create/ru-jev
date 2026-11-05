@@ -34,18 +34,19 @@ PARQUET = "refs/convert/parquet"
 
 
 def _retry(fn, attempts=4, base=5.0):
-    """Повторить загрузку при сетевом сбое.
+    """Retry a download after a network failure.
 
-    Обучение v1.2 прошло без rucola и terra: хаб не отдал их один раз, сборщик
-    написал [skip] и пошёл дальше, а модель осталась без двух задач из
-    тринадцати и показала на них уровень монетки. Разовый сбой сети не должен
-    стоить прогона, поэтому пробуем несколько раз с растущей паузой.
+    The v1.2 run trained without rucola and terra: the hub failed to serve them
+    once, the builder printed [skip] and carried on, and the model was left
+    missing two of thirteen tasks, answering both at the level of a coin. A
+    one-off network failure should not cost a run, so we try several times with
+    a growing pause.
     """
     import time
-    # Повторять стоит только то, что может пройти со второй попытки. RuCoLA
-    # отдаётся скриптом, который datasets 4 больше не исполняет, и это не
-    # случайность: три повтора с паузами ушли впустую, пока не сработал переход
-    # на parquet-ветку. Такие ошибки пробрасываем сразу.
+    # Only retry what can succeed on a second attempt. RuCoLA is served by a
+    # loading script that datasets 4 no longer executes, and that is not a
+    # transient failure: three retries with pauses were wasted before switching
+    # to the parquet branch worked. Such errors are raised straight away.
     FINAL = ("Dataset scripts are no longer supported",
              "doesn't exist on the Hub",
              "Couldn't find any data file")
@@ -154,11 +155,12 @@ INTENT_RU = {
     "transport traffic": "узнать про пробки", "weather query": "узнать погоду",
 }
 
-# Жаргон: английский ключ, записанный кириллицей, и его укороченная форма.
-# Так метки пишут в чатах и в тикетах, и v1.1 на них проваливалась: 0.608 против
-# 0.95 на знакомых формулировках. Правила нарочно НЕ подгонялись под словарь из
-# robustness.py, иначе прирост на жаргоне означал бы только утечку теста.
-# Стили применяются ТОЛЬКО к интентам. Сценарный жаргон остаётся отложенным.
+# Jargon: the English key written in Cyrillic, and a clipped form of it. That is
+# how labels are written in chat and in tickets, and v1.1 failed on them: 0.608
+# against 0.95 on familiar wordings. The rules were deliberately NOT tuned
+# against the vocabulary in robustness.py; otherwise a gain on jargon would mean
+# nothing but a leaked test. These styles apply to INTENTS ONLY. Scenario jargon
+# stays held out.
 _DIGRAPHS = [("sch", "ш"), ("tch", "ч"), ("sh", "ш"), ("ch", "ч"), ("th", "з"),
              ("ph", "ф"), ("ck", "к"), ("qu", "кв"), ("ng", "нг"), ("ee", "и"),
              ("ea", "э"), ("oo", "у"), ("ew", "ью"), ("ou", "ау"), ("ow", "оу"),
@@ -171,7 +173,7 @@ _SINGLES = {"a": "а", "b": "б", "c": "к", "d": "д", "e": "е", "f": "ф", "g
 
 
 def translit(word):
-    """Английское слово кириллицей, как его пишут в переписке."""
+    """An English word in Cyrillic, the way it is written in correspondence."""
     w, out, i = word.lower(), [], 0
     while i < len(w):
         for d, r in _DIGRAPHS:
@@ -190,7 +192,7 @@ def jargon_translit(lab):
 
 
 def jargon_clip(lab):
-    """Усечённая форма: так метку сокращают, когда она длинная."""
+    """A clipped form: how a long label gets shortened in practice."""
     first = lab.replace("_", " ").split()[0]
     t = translit(first)
     return t[:5] if len(t) > 6 else t
@@ -333,15 +335,16 @@ def rows_simple(hf_id, task, dtype, text_col, label_col, options, val_fraction=0
             if ans < 0 or ans >= len(options):
                 continue
             pool.append((str(r[text_col]), ans))
-    # Разделение на train и val обязано зависеть ТОЛЬКО от имени задачи. Раньше
-    # пул перемешивался общим генератором, засеянным один раз на весь файл, а он
-    # расходуется всем кодом подряд. Стоило добавить задаче выше новый стиль
-    # меток, как random.choice начинал брать другое число бит, поток расходился,
-    # и у всех задач НИЖЕ по списку валидация оказывалась другой. Из-за этого
-    # сравнение v1.1 с v1.3 на rucola и mera_qa вышло бессмысленным: около 90%
-    # валидационных строк новой сборки лежали у старой модели в обучении, и её
-    # 0.909 на rucola это оценка на своих же обучающих данных. Теперь сдвиг
-    # формулировок в одной задаче не двигает разделение ни в одной другой.
+    # The train/validation split must depend ONLY on the task name. Previously
+    # the pool was shuffled with the shared generator, seeded once for the whole
+    # file and consumed by every piece of code in turn. Adding a new label style
+    # to a task higher up made random.choice draw a different number of bits,
+    # the stream diverged, and every task LOWER in the list got a different
+    # validation split. That is what made the v1.1 against v1.3 comparison on
+    # rucola and mera_qa meaningless: about 90% of the new build's validation
+    # rows were in the old model's training data, so its 0.909 on rucola was a
+    # score on its own training rows. A wording change in one task now moves no
+    # other task's split.
     srng = random.Random(f"split:{task}")
     srng.shuffle(pool)
     if cap and len(pool) > cap:
@@ -407,9 +410,9 @@ def rows_massive(hf_id, task, n_options=5, cap=12000, label_styles=None):
         if split_name not in ds:
             continue
         rows = list(ds[split_name])
-        # Валидация здесь из источниковых validation и test, в обучение идёт
-        # только train, так что пересечения не было никогда. Но какие строки
-        # выживут под cap, тоже не должно зависеть от чужих правок.
+        # Validation here comes from the source validation and test splits and
+        # only train goes into training, so there was never any overlap. But
+        # which rows survive the cap must not depend on edits elsewhere either.
         random.Random(f"split:{task}:{split_name}").shuffle(rows)
         if dest == "train" and cap:
             rows = rows[:cap]
@@ -459,8 +462,8 @@ def rows_mera(configs=("ruopenbookqa", "ruworldtree"), task="mera_qa"):
             except Exception:
                 continue
         print(f"[ok] MERA/{cfg}: {n} examples")
-    # carve a validation slice out of the train pool. Своё зерно, не общий
-    # поток: причина та же, что в rows_simple.
+    # carve a validation slice out of the train pool. Its own seed rather than
+    # the shared stream, for the reason given in rows_simple.
     random.Random(f"split:{task}").shuffle(out["train"])
     n_val = max(1, int(len(out["train"]) * 0.1))
     out["val"] = out["train"][:n_val]
@@ -510,10 +513,11 @@ def main():
     from collections import Counter
     got = Counter(r["task"] for r in train)
 
-    # Проверка состава до записи. v1.2 обучилась без rucola и terra, потому что
-    # хаб не отдал их один раз: сборщик написал [skip], прогон этого не заметил,
-    # и три часа на карте ушли на модель, которая на двух задачах из тринадцати
-    # отвечает монеткой. Теперь недобор данных останавливает сборку.
+    # Check the composition before writing. v1.2 trained without rucola and
+    # terra because the hub failed to serve them once: the builder printed
+    # [skip], the run did not notice, and three hours of GPU went into a model
+    # that answers two of thirteen tasks at the level of a coin. A short build
+    # now stops instead.
     EXPECTED = {"terra": 2616, "danetqa": 1749, "russe": 19845, "rwsd": 606,
                 "parus": 400, "rcb": 438, "rureviews": 27000, "toxicity": 27000,
                 "georeview": 27000, "massive_scenario": 11514,
@@ -524,11 +528,11 @@ def main():
     for task, ref in sorted(EXPECTED.items()):
         n = got.get(task, 0)
         if n < ref // 2:
-            bad.append(f"  {task}: получено {n}, ожидалось около {ref}")
+            bad.append(f"  {task}: got {n}, expected about {ref}")
     if bad:
-        print("\nСОСТАВ ДАННЫХ НЕПОЛНЫЙ, обучение запускать нельзя:")
+        print("\nDATA COMPOSITION IS INCOMPLETE, do not start training:")
         print("\n".join(bad))
-        print("\nнайдено по задачам:", dict(got))
+        print("\nfound per task:", dict(got))
         raise SystemExit(1)
 
     random.shuffle(train)
@@ -540,7 +544,7 @@ def main():
     print("\nTOTAL: {} train / {} val written to {}".format(len(train), len(val), OUT))
     print("train by task:", dict(got))
     print("val by task:  ", dict(Counter(r["task"] for r in val)))
-    print("состав полный: все {} задач на месте".format(len(EXPECTED)), flush=True)
+    print("composition complete: all {} tasks present".format(len(EXPECTED)), flush=True)
 
 
 if __name__ == "__main__":

@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-"""Подбирает температуру сида так же, как это делает train.py, и дописывает
-в строки стенда p_pick при этой температуре.
+"""Fit a checkpoint's temperature the way train.py does, then add p_pick at
+that temperature to the bench rows.
 
-Зачем. Прогоны сидов гасятся сразу после третьей эпохи, поэтому своей
-подобранной температуры у них нет, в calibration.json лежит заглушка. А
-опубликованные числа карточки про уверенность и зазор считаются именно при
-температуре модели. Чтобы сравнение было тем же самым, а не похожим,
-температура подбирается на валидации самого чекпойнта, минимизацией NLL по
-сетке, то есть тем же критерием, что в scripts/train.py.
+Why. A run stopped right after an epoch has no fitted temperature of its own:
+calibration.json carries a placeholder. The published confidence and gap figures
+are computed at the model's own temperature, so to make the comparison the same
+rather than merely similar, the temperature is fitted on that checkpoint's own
+validation split by grid search on the negative log-likelihood, which is the
+criterion scripts/train.py uses.
 
-Выход: файл стенда с полями p_pick и probs, пригодный для aggregate.py.
+Output: the bench file with p_pick and probs added, ready for aggregate.py.
 """
 import argparse, json, math
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--val", required=True, help="оценки на валидации чекпойнта")
-ap.add_argument("--bench", required=True, help="оценки на стенде формулировок")
+ap.add_argument("--val", required=True, help="scores on the checkpoint's validation split")
+ap.add_argument("--bench", required=True, help="scores on the wording bench")
 ap.add_argument("--out", required=True)
 a = ap.parse_args()
 
@@ -35,7 +35,7 @@ def nll(data, T):
 
 
 val = rows(a.val)
-# Грубая сетка как в train.py, затем сужение втрое вокруг найденного минимума.
+# Coarse grid as in train.py, then narrowing around the minimum found.
 lo, hi = 0.25, 6.0
 for _ in range(6):
     step = (hi - lo) / 48
@@ -66,7 +66,7 @@ with open(a.out, "w", encoding="utf-8") as fh:
 
 bacc = sum(r["pick"] == r["answer"] for r in bench) / len(bench)
 print(f"{a.val.split('/')[-1]}")
-print(f"  температура по валидации: {T:.4f}  (NLL {nll(val, T):.4f})")
-print(f"  валидация целиком: {vacc:.4f} на {len(val)} строках")
-print(f"  стенд целиком:     {bacc:.4f} на {len(bench)} строках")
-print("  по задачам: " + ", ".join(f"{t} {c/n:.3f} ({n})" for t, (c, n) in sorted(per.items())))
+print(f"  temperature from validation: {T:.4f}  (NLL {nll(val, T):.4f})")
+print(f"  whole validation: {vacc:.4f} on {len(val)} rows")
+print(f"  whole bench:      {bacc:.4f} on {len(bench)} rows")
+print("  by task: " + ", ".join(f"{t} {c/n:.3f} ({n})" for t, (c, n) in sorted(per.items())))

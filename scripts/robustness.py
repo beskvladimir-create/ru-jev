@@ -48,9 +48,10 @@ SCENARIO_QUESTION = {
     k: f"человек спрашивает про {v}" for k, v in SCENARIO_RU.items()
 }
 
-# Третий элемент: с какой версии этот стиль встречается в обучающем наборе.
-# v1 и v1.1 видели только английский ключ и русское слово, остальное для них
-# незнакомо. Без этой пометки сравнение версий читается неверно.
+# Third element: from which release this style appears in the training mixture.
+# v1 and v1.1 saw only the English key and the Russian word; everything else is
+# unfamiliar to them. Without this marker the comparison between releases reads
+# wrongly, because a trained style measures recall and not generalisation.
 VOCABS = [
     ("английский ключ", None, "v1"),
     ("русское слово", SCENARIO_RU, "v1.1"),
@@ -61,10 +62,11 @@ VOCABS = [
 ]
 
 
-# v1.3 обучается на транслитерациях ключей интентов, а ключ интента начинается с
-# названия сценария, так что часть жаргонных меток сценариев попадает в обучение
-# как первое слово. Для этих меток столбец «жаргон» мерит уже не обобщение, а
-# припоминание. Считаю их отдельно и в отчёте даю чистое подмножество.
+# v1.3 trains on transliterations of intent keys, and an intent key begins with
+# its scenario name, so some of the scenario jargon labels reach training as a
+# first word. For those labels the jargon column measures recall rather than
+# generalisation. They are counted separately and the report gives the clean
+# subset as well.
 LEAKED = sorted(l for l, w in SCENARIO_JARGON.items() if w == jargon_translit(l))
 CLEAN = sorted(l for l in SCENARIO_JARGON if l not in LEAKED)
 

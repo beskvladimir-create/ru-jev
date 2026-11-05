@@ -1,17 +1,24 @@
 #!/usr/bin/env python3
-"""Сводка по наборам, которых не видела ни одна модель.
+"""Summary of the datasets no model trained on.
 
-Метод тот же, что в aggregate.py, иначе числа несопоставимы с таблицей по
-стенду формулировок: температура подбирается по сетке минимизацией NLL на одной
-половине, ECE считается на другой, среднее по 25 разбиениям.
+The method is the one in aggregate.py, so the figures stay comparable with the
+wording bench: the temperature is fitted by grid search on the negative
+log-likelihood of one half, the ECE is measured on the other, averaged over 25
+half-splits.
 
-Средняя уверенность берётся при СВОЕЙ температуре модели: у Ру-Жев это
-подобранная при обучении и записанная в calibration.json, у Laya это то, что
-она отдаёт сама.
+Mean confidence uses each model's OWN temperature: for Ru-Jev the released one
+from calibration.json, for Laya its own output, which is already calibrated.
 """
 import json, math, random, statistics, sys
 
 SPLITS, BINS = 25, 15
+
+# Calibration lives in calib.py. An earlier copy of it here shuffled its index
+# list in place without resetting it between splits, so split s was applied to
+# the permutation left by s-1 and the result depended on the order of rows in
+# the file. calib.py resets the indices, derives each split seed from a
+# recorded SPLIT_SEED and puts rows in a canonical order.
+from calib import calibration as _calibration  # noqa: E402
 
 
 def load(path):
@@ -68,14 +75,15 @@ def ece(rows, T):
 
 
 def _wrap(rows):
-    """Возвращает (T, ECE после своей T, сырой ECE), как раньше."""
+    """Returns (T, ECE after its own T, raw ECE), as the old signature did."""
     c = _calibration(rows)
     return c["T_mean"], c["ECE_own_T"], c["ECE_raw"]
 
 calibration = calib = _wrap
 
 
-# Своя температура модели: у Ру-Жев из релиза, у Laya единица, она уже калибрует сама.
+# Each model's own temperature: the released one for Ru-Jev, 1.0 for Laya,
+# which returns calibrated probabilities itself.
 OWN_T = {"v1.3": 1.8640, "v1.1": 2.2754}
 
 
@@ -90,7 +98,8 @@ def main(args):
 
     for s in sets:
         print(f"\n## {s}\n")
-        print("| модель | точность | средняя уверенность | зазор | ECE как есть | подобранная T | ECE после своей T |")
+        print("| Model | Accuracy | Mean confidence | Gap | ECE as is | "
+              "Fitted T | ECE after its own T |")
         print("|---|---|---|---|---|---|---|")
         for tag, rows in data.items():
             rs = [r for r in rows if r.get("set") == s]
@@ -104,10 +113,10 @@ def main(args):
                   f"{e_raw:.4f} | {Tf:.3f} | {e_out:.4f} |")
         first = [r for r in next(iter(data.values())) if r.get("set") == s]
         n = len(first)
-        # Число вариантов берём из длины оценок: сами варианты в выгрузку
-        # оценок не пишутся, они лежат в файле строк набора.
+        # The candidate count comes from the length of the scores: the options
+        # themselves are not written to the score dump, they live in the rows file.
         k = len(first[0].get("logits") or first[0]["probs"])
-        print(f"\nСтрок {n}, вариантов {k}, случайное угадывание {1/k:.3f}.")
+        print(f"\nRows {n}, candidates {k}, chance {1/k:.3f}.")
 
 
 if __name__ == "__main__":

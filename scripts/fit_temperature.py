@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""Подогнать температуру модели под свои данные.
+"""Fit a model's temperature on your own data.
 
-Зачем. Температура из релиза подобрана на нашей валидации. На ваших решениях
-распределение уверенности другое, и вероятности будут смещены. Точность от
-температуры НЕ зависит вообще: софтмакс по вариантам монотонен, аргмакс не
-меняется. Меняется только то, насколько честно число рядом с ответом.
+Why. The released temperature was fitted on our validation split. On your
+decisions the distribution of confidence is different and the probabilities will
+be biased. Accuracy does NOT depend on the temperature at all: the softmax over
+candidates is monotone in it and the argmax does not move. What changes is only
+how honest the number next to the answer is.
 
-Сколько строк нужно. Несколько сотен уже дают устойчивую оценку. Скрипт считает
-температуру на половинных разбиениях и печатает разброс, чтобы было видно,
-хватило ли данных: если край разброса далеко от середины, строк мало.
+How many rows. A few hundred already give a stable estimate. The script fits the
+temperature on half-splits and prints the spread, so it is visible whether there
+were enough rows: if the edge of the spread is far from the middle, there were
+not.
 
-Формат входа, по строке на решение:
-  {"input": "текст запроса", "options": ["вариант", ...], "answer": 0}
-Поле "text" тоже принимается вместо "input".
+Input format, one JSON object per decision:
+  {"input": "user request text", "options": ["candidate", ...], "answer": 0}
+A "text" field is accepted instead of "input".
 
-Пример:
+Example:
   python scripts/fit_temperature.py --model besktech/ru-jev \
       --rows my_decisions.jsonl --out my_calibration.json
 """
@@ -41,7 +43,7 @@ class Scorer(nn.Module):
 
 
 def _load_head(path):
-    """Голова лежит в safetensors; .pt принимается для старых выгрузок."""
+    """The head ships as safetensors; .pt is accepted for older dumps."""
     from huggingface_hub import hf_hub_download
     for name, reader in (("head.safetensors", None), ("head.pt", torch.load)):
         local = os.path.join(path, name)
@@ -56,7 +58,7 @@ def _load_head(path):
             from safetensors.torch import load_file
             return load_file(src)
         return reader(src, map_location="cpu")
-    raise SystemExit("не найдена голова: ни head.safetensors, ни head.pt")
+    raise SystemExit("no scoring head found: neither head.safetensors nor head.pt")
 
 
 def nll(scored, T):
@@ -69,7 +71,7 @@ def nll(scored, T):
 
 
 def fit(scored, lo=0.2, hi=8.0, steps=300, rounds=4):
-    """Сетка по NLL, затем сужение вокруг найденной точки."""
+    """Grid search on the negative log-likelihood, then narrowing around it."""
     best = 1.0
     for _ in range(rounds):
         cand = [lo + (hi - lo) * i / steps for i in range(steps + 1)]
@@ -101,11 +103,11 @@ def ece(scored, T):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", required=True, help="путь к папке или имя репозитория на хабе")
+    ap.add_argument("--model", required=True, help="local directory or hub repo id")
     ap.add_argument("--rows", required=True)
-    ap.add_argument("--out", help="куда записать calibration.json с новой температурой")
+    ap.add_argument("--out", help="where to write a calibration.json with the new temperature")
     ap.add_argument("--max-len", type=int, default=None)
-    ap.add_argument("--seed", type=int, default=20261105, help="сид разбиений, записывается в отчёт")
+    ap.add_argument("--seed", type=int, default=20261105, help="split seed, recorded in the report")
     a = ap.parse_args()
 
     max_len = a.max_len
@@ -123,7 +125,7 @@ def main():
 
     rows = [json.loads(l) for l in open(a.rows, encoding="utf-8") if l.strip()]
     if len(rows) < 100:
-        print(f"предупреждение: строк всего {len(rows)}, оценка будет шумной")
+        print(f"warning: only {len(rows)} rows, the estimate will be noisy")
     tok = AutoTokenizer.from_pretrained(a.model)
     model = Scorer(a.model).eval()
 
@@ -137,7 +139,7 @@ def main():
             lg = model(enc["input_ids"], enc["attention_mask"]).float().tolist()
             scored.append((lg, int(r["answer"])))
             if (i + 1) % 200 == 0:
-                print(f"  посчитано {i+1}/{len(rows)}", flush=True)
+                print(f"  scored {i+1}/{len(rows)}", flush=True)
 
     acc = sum(lg.index(max(lg)) == ans for lg, ans in scored) / len(scored)
     T_all = fit(scored)
@@ -152,22 +154,22 @@ def main():
         ts.append(T)
         es.append(ece([scored[i] for i in order[h:]], T))
 
-    print(f"\nстрок {len(scored)}, точность {acc:.4f} (от температуры не зависит)")
-    print(f"температура на всех строках: {T_all:.4f}")
-    print(f"по {SPLITS} половинным разбиениям, сид {a.seed}: "
-          f"среднее {statistics.mean(ts):.4f}, от {min(ts):.3f} до {max(ts):.3f}")
-    print(f"ECE при температуре 1: {ece(scored, 1.0):.4f}")
-    print(f"ECE после подобранной:  {statistics.mean(es):.4f}")
+    print(f"\nrows {len(scored)}, accuracy {acc:.4f} (independent of the temperature)")
+    print(f"temperature on all rows: {T_all:.4f}")
+    print(f"over {SPLITS} half-splits, seed {a.seed}: "
+          f"mean {statistics.mean(ts):.4f}, from {min(ts):.3f} to {max(ts):.3f}")
+    print(f"ECE at temperature 1: {ece(scored, 1.0):.4f}")
+    print(f"ECE after the fitted one: {statistics.mean(es):.4f}")
     spread = max(ts) - min(ts)
     if spread > 0.5:
-        print(f"разброс температуры {spread:.2f}, это много: добавьте строк")
+        print(f"temperature spread {spread:.2f} is wide: add more rows")
 
     if a.out:
         json.dump({"temperature": T_all, "max_len": max_len, "calibrated": True,
                    "fitted_on": os.path.basename(a.rows), "n_rows": len(scored),
                    "split_seed": a.seed, "accuracy": round(acc, 4)},
                   open(a.out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-        print(f"\nзаписано: {a.out}")
+        print(f"\nwritten: {a.out}")
 
 
 if __name__ == "__main__":

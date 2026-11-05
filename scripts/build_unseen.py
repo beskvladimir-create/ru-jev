@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
-"""Строки двух наборов, которых не видела ни одна из сравниваемых моделей.
+"""Rows of two datasets that neither compared model trained on.
 
-Зачем отдельно от стенда формулировок. Тот стенд построен на MASSIVE, чей
-обучающий сплит лежит в нашей смеси с версии 1, то есть это домашнее поле, и
-разрыв в точности там ничего не доказывает. Здесь оба набора не входят ни в
-нашу смесь, ни, по карточке, в обучение Laya.
+Why these are kept apart from the wording bench. That bench is built on MASSIVE,
+whose training split has been in our mixture since version 1, so it is home
+ground and a gap in accuracy there proves nothing. Neither dataset here is in
+our mixture, nor, by its model card, in Laya's training.
 
-Названия категорий берутся из источника, а не придумываются: у рубрик новостей
-это поле label_text в ai-forever/headline-classification, у эмоций это
-ClassLabel(names=...) в sagteam/cedr_v1. Ру-Жев читает текст варианта, поэтому
-выдуманное название испортило бы замер.
+The category names are taken from the source rather than invented: for news
+topics from the label_text field of ai-forever/headline-classification, for
+emotions from ClassLabel(names=...) in sagteam/cedr_v1. Ru-Jev reads the option
+text, so an invented name would corrupt the measurement.
 
-Порядок вариантов детерминирован от crc32 текста. Ру-Жеву он безразличен, он
-считает каждую пару отдельным проходом, а Laya читает все варианты за один
-проход, и ей порядок это вход. Значит он обязан быть одинаковым и
-воспроизводимым.
+The order of candidates is derived from the crc32 of the text. Ru-Jev is
+indifferent to it, scoring each pair in its own pass, while Laya reads all
+options in one pass and order is an input to it. The order therefore has to be
+the same for both and reproducible.
 """
 import argparse, json, random, zlib
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--headline", required=True,
-                help="jsonl теста ai-forever/headline-classification с полем label_text")
+                help="test jsonl of ai-forever/headline-classification with a label_text field")
 ap.add_argument("--out", required=True)
 ap.add_argument("--n-per-set", type=int, default=1000)
 _a = ap.parse_args()
@@ -30,7 +30,7 @@ N_PER_SET = _a.n_per_set
 RUBRICS = ["спорт", "происшествия", "политика", "наука", "культура", "экономика"]
 EMO_RU = {"joy": "радость", "sadness": "грусть", "surprise": "удивление",
           "fear": "страх", "anger": "злость"}
-EMO_ORDER = ["joy", "sadness", "surprise", "fear", "anger"]   # индексы 0..4
+EMO_ORDER = ["joy", "sadness", "surprise", "fear", "anger"]   # indices 0..4
 
 
 def ordered(options, text):
@@ -41,7 +41,8 @@ def ordered(options, text):
 
 rows = []
 
-# Рубрики новостей. Файл источника уже скачан, в нём 12 000 строк с label_text.
+# News topics. The source file is downloaded beforehand; it holds 12,000 rows
+# with a label_text field.
 src = [json.loads(l) for l in open(_a.headline, encoding="utf-8")]
 rnd = random.Random("headline")
 rnd.shuffle(src)
@@ -53,9 +54,9 @@ for r in src[:N_PER_SET]:
                  "text": r["text"], "gold": gold,
                  "options": opts, "answer": opts.index(gold)})
 
-# Эмоции. Берём только строки ровно с одной меткой: многометочные к выбору
-# одного варианта не сводятся, а пустые это отсутствие эмоции, отдельный класс,
-# которого в списке пяти нет.
+# Emotions. Only rows with exactly one label are used: multi-label rows do not
+# reduce to choosing one candidate, and an empty label means absence of emotion,
+# a separate class that is not among the five.
 from datasets import load_dataset
 cd = load_dataset("sagteam/cedr_v1")
 sp = "test" if "test" in cd else list(cd)[0]
@@ -75,8 +76,8 @@ with open(OUT, "w", encoding="utf-8") as fh:
         fh.write(json.dumps(r, ensure_ascii=False) + "\n")
 
 import collections
-print(f"записано {len(rows)} строк в {OUT}")
+print(f"written {len(rows)} rows to {OUT}")
 for s, c in collections.Counter(r["set"] for r in rows).items():
     sub = [r for r in rows if r["set"] == s]
-    print(f"  {s}: {c} строк, вариантов {len(sub[0]['options'])}, "
-          f"распределение ответов {dict(collections.Counter(r['gold'] for r in sub))}")
+    print(f"  {s}: {c} rows, candidates {len(sub[0]['options'])}, "
+          f"answer distribution {dict(collections.Counter(r['gold'] for r in sub))}")

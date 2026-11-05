@@ -1,0 +1,17 @@
+# SHA-256 of the released weights and of the scoring heads.
+#
+# These files are not in this repository: they are on Hugging Face at
+# https://huggingface.co/besktech/ru-jev (v1.1 on the v1.1 branch). Download
+# them and check against this file. The two releases are different weights,
+# which is what makes their identical count of 8,120 correct answers on the
+# comparable rows a real result rather than one checkpoint scored twice; see
+# results/fix18/comparable.md.
+#
+# Verified 2026-11-05.
+
+8aca6840cad16019ea7039efd24ab9a9974090207dd1c011bdb16d4d61794c5d  v1.1 branch / model.safetensors
+f5632bb843eefd055a9e62460e3b247b90d83843efcba5cac05054bffd6b6740  v1.1 branch / head.safetensors
+5ac456679ae1cdaf358c2acadb180f83d3143dde40404ecb78c7312d15e05d52  v1.1 branch / head.pt
+7e07664cf8bb677a9285a034c73920cc96853c0aebdc885e10e3b98812e3596d  main / model.safetensors
+724740455841c6c4c14ff53489b8c9e3956952d2cbf32ab1884b1f0855508bcf  main / head.safetensors
+95d7f5f7217a440868c8838c33a64770e7ac2fccd158063227c7a2bbeaa67121  main / head.pt

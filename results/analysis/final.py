@@ -17,9 +17,11 @@ def stats(name,k,G,ok11,ok13,cf11,cf13,okL=None):
         ii=np.concatenate([rng.choice(byl[l],len(byl[l])) for l in rng.choice(ul,len(ul))]); cb.append(y[ii].mean()-x[ii].mean())
     per=[y[byl[l]].mean()-x[byl[l]].mean() for l in ul]
     ce=lambda ok,cf:1000*((~ok)&(cf>0.8)).mean()
+    def aurc(ok,cf):
+        o=np.argsort(-cf); e=1-ok[o].astype(float); return float(np.mean(np.cumsum(e)/np.arange(1,len(e)+1)))
     cells.append(dict(name=name,k=k,n=len(x),nl=len(ul),a=x.mean(),b_=y.mean(),d=y.mean()-x.mean(),B=b,C=c,p=p,
         ci=np.percentile(cb,[2.5,97.5]),up=sum(v>0 for v in per),dn=sum(v<0 for v in per),
-        ce=(ce(x,cf11),ce(y,cf13)),L=(okL.mean() if okL is not None else np.nan)))
+        ce=(ce(x,cf11),ce(y,cf13)),au=(aurc(x,cf11),aurc(y,cf13)),gap=(cf11.mean()-x.mean(),cf13.mean()-y.mean()),L=(okL.mean() if okL is not None else np.nan)))
 def evalset(rows,S,keep,cand=None):
     """rows: option lists; S: dict model->score rows; cand: restrict to these label sets (per row) using row label map"""
     out={}
@@ -87,7 +89,7 @@ H=[i for i,c in enumerate(cells) if not ctrl(c['name'])]
 ps=np.array([cells[i]['p'] for i in H]); o=np.argsort(ps); m=len(ps); run=0
 for rank,j in enumerate(o):
     run=max(run,(m-rank)*ps[j]); cells[H[j]]['holm']=min(1,run)
-print(f"Holm family size {m}")
-print('probe|k|n|labels|v1.1|v1.3|diff|labelCI|b|c|p|pHolm|up/dn|confErr v11->v13 per1000|Laya')
+print(f"Holm family size {m}: all cells except the training-style controls (English key, Russian word, Russian phrase); includes the two unseen-dataset cells")
+print('probe|k|n|labels|v1.1|v1.3|diff|labelCI|b|c|p|pHolm|up/dn|confErr v11->v13 per1000|Laya|AURC v11->v13|gap v11->v13')
 for c in cells:
-    print(f"{c['name']}|{c['k']}|{c['n']}|{c['nl']}|{c['a']:.3f}|{c['b_']:.3f}|{c['d']:+.3f}|[{c['ci'][0]:+.3f},{c['ci'][1]:+.3f}]|{c['B']}|{c['C']}|{c['p']:.2g}|{c.get('holm',float('nan')):.2g}|{c['up']}/{c['dn']}|{c['ce'][0]:.0f}->{c['ce'][1]:.0f}|{c['L']:.3f}")
+    print(f"{c['name']}|{c['k']}|{c['n']}|{c['nl']}|{c['a']:.3f}|{c['b_']:.3f}|{c['d']:+.3f}|[{c['ci'][0]:+.3f},{c['ci'][1]:+.3f}]|{c['B']}|{c['C']}|{c['p']:.2g}|{c.get('holm',float('nan')):.2g}|{c['up']}/{c['dn']}|{c['ce'][0]:.0f}->{c['ce'][1]:.0f}|{c['L']:.3f}|{c['au'][0]:.3f}->{c['au'][1]:.3f}|{c['gap'][0]:+.3f}->{c['gap'][1]:+.3f}")

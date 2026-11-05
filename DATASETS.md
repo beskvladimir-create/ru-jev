@@ -14,6 +14,55 @@ permit commercial use go into the build. Non-commercial sets are excluded.
 | MASSIVE intent | `mteb/amazon_massive_intent` (ru) | Apache-2.0 on the mirror, CC-BY-4.0 upstream | yes | 60 intents | choice |
 | MERA | `ai-forever/MERA` (ruopenbookqa, ruworldtree) | MIT | yes | 4-way reasoning questions, train split only | choice |
 
+## Evaluation-only datasets
+
+Neither release trained on these. They are used in the paper for the
+unseen-dataset comparison and are not part of any training mixture.
+
+| Dataset | HF id | Licence in metadata | Commercial | What is used | Decision type |
+|---|---|---|---|---|---|
+| Headline topics | `ai-forever/headline-classification` | MIT | yes | 6 news topics, test split, 1,000 sampled rows | choice |
+| CEDR emotions | `sagteam/cedr_v1` | Apache-2.0 | yes | 5 emotions, rows with exactly one label, 1,000 sampled rows | choice |
+
+The same corpora are mirrored by MTEB as `mteb/HeadlineClassification` and
+`mteb/CEDRClassification`; the figures in the paper come from the two sources
+above. Category names are taken from the source, from the `label_text` field for
+headlines and from `ClassLabel(names=...)` for CEDR, because the model reads the
+option text and an invented name would corrupt the measurement. Only
+single-label CEDR rows are used: multi-label rows do not reduce to choosing one
+candidate, and an empty label set means absence of emotion, a class that is not
+among the five.
+
+**Licence caveat for both.** The licence is declared only in the `license` field
+of the repository's README metadata. Neither repository, nor either MTEB mirror,
+ships a LICENSE file. That is a statement by the repository owner rather than a
+licence document, and it is not a legal opinion. Checked 2026-11-05.
+
+## Pinned revisions
+
+Every figure in the paper comes from these exact revisions. Verified
+2026-11-05 against the Hugging Face API.
+
+| Repository | Kind | Revision |
+|---|---|---|
+| `RussianNLP/russian_super_glue` | dataset | `53cb9d7f38b3` |
+| `mteb/RuReviewsClassification` | dataset | `e6a7fcaca9cd` |
+| `d0rj/rudetoxifier_data` | dataset | `7509275056f8` |
+| `RussianNLP/rucola` | dataset | `00e61d446ceb` |
+| `mteb/GeoreviewClassification` | dataset | `fb29d6137c54` |
+| `mteb/amazon_massive_scenario` | dataset | `58871793b91a` |
+| `mteb/amazon_massive_intent` | dataset | `940fd47a81ea` |
+| `ai-forever/MERA` | dataset | `e9628afed9c1` |
+| `ai-forever/headline-classification` | dataset | `1e9d989d65f6` |
+| `sagteam/cedr_v1` | dataset | `abafbe63cf92` |
+| `jhu-clsp/mmBERT-base` | model, backbone | `c5955035435e` |
+| `convaiinnovations/laya-multilingual` | model, comparison | `1720e3e3357c` |
+
+None of the ten datasets ships a LICENSE file in its Hugging Face repository;
+every licence in the tables above is the `license` field of the repository's
+README metadata, except Georeview, where the upstream Yandex repository on
+GitHub does ship an MIT `LICENSE.md` as noted below.
+
 ## Caveats
 
 - **RuCoLA.** Apache-2.0 covers the labels and the code. The underlying sentences are

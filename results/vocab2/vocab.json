@@ -1,0 +1,48 @@
+{
+ "стиль_A": {
+  "описание": "английский ключ сценария заглавными латинскими с суффиксом _SCN, как константа перечисления в коде",
+  "метки": {
+   "alarm": "ALARM_SCN",
+   "audio": "AUDIO_SCN",
+   "calendar": "CALENDAR_SCN",
+   "cooking": "COOKING_SCN",
+   "datetime": "DATETIME_SCN",
+   "email": "EMAIL_SCN",
+   "general": "GENERAL_SCN",
+   "iot": "IOT_SCN",
+   "lists": "LISTS_SCN",
+   "music": "MUSIC_SCN",
+   "news": "NEWS_SCN",
+   "play": "PLAY_SCN",
+   "qa": "QA_SCN",
+   "recommendation": "RECOMMENDATION_SCN",
+   "social": "SOCIAL_SCN",
+   "takeaway": "TAKEAWAY_SCN",
+   "transport": "TRANSPORT_SCN",
+   "weather": "WEATHER_SCN"
+  }
+ },
+ "стиль_B": {
+  "описание": "первые три буквы русского названия сценария заглавными кириллицей",
+  "метки": {
+   "alarm": "БУД",
+   "audio": "ЗВУ",
+   "calendar": "КАЛ",
+   "cooking": "КУЛ",
+   "datetime": "ДАТ",
+   "email": "ПОЧ",
+   "general": "ОБЩ",
+   "iot": "УМН",
+   "lists": "СПИ",
+   "music": "МУЗ",
+   "news": "НОВ",
+   "play": "ВОС",
+   "qa": "СПР",
+   "recommendation": "РЕК",
+   "social": "СОЦ",
+   "takeaway": "ДОС",
+   "transport": "ТРА",
+   "weather": "ПОГ"
+  }
+ }
+}

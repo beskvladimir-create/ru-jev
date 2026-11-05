@@ -1,30 +1,42 @@
 #!/usr/bin/env python3
-"""Оценка одного чекпойнта Ру-Жев по строкам. Пишет сырые логиты.
+"""Score one checkpoint over a file of decisions. Writes raw logits.
 
-Температуру здесь НЕ применяем. Логиты позволяют подобрать её потом точно,
-а аргмакс к температуре нечувствителен, поэтому точность от этого не зависит.
+The temperature is NOT applied here. Raw logits let a temperature be fitted
+afterwards on whatever split is wanted, and the argmax is invariant to it, so
+accuracy does not depend on this choice at all.
 
-Понимает два формата строк:
-  стенд формулировок: text, options, answer (+ vocab, gold_clean, seen_from)
-  валидация задач:    input, options, answer (+ task, decision_type)
+Two row formats are accepted:
+  wording bench:    text,  options, answer  (+ vocab, gold_clean, seen_from)
+  task validation:  input, options, answer  (+ task, decision_type)
+
+Usage:
+  python scripts/score_rows.py --model model/ru-jev-v1.3/ship \\
+      --rows data/val.jsonl --out val_v13.jsonl --tag ru-jev-v1.3
 """
-import argparse, json, os
-import torch, torch.nn as nn
+import argparse
+import json
+import os
+
+import torch
+import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--model", required=True)
+ap.add_argument("--model", required=True, help="local directory or hub repo id")
 ap.add_argument("--rows", required=True)
 ap.add_argument("--out", required=True)
-ap.add_argument("--tag", required=True)
+ap.add_argument("--tag", required=True, help="model name recorded in every row")
 a = ap.parse_args()
 
-PASS = ("row_id", "vocab", "gold_clean", "gold_label", "seen_from", "task", "decision_type",
-        "set", "gold", "licence")
+# Fields copied through from the input row, so downstream scripts can slice the
+# output without reading the input file again. row_id lets the per-row
+# predictions of two checkpoints be lined up.
+PASS = ("row_id", "vocab", "gold_clean", "gold_label", "seen_from", "task",
+        "decision_type", "set", "gold", "licence")
 
 
 def _load_head(path):
-    """Голова лежит в safetensors; .pt принимается для старых выгрузок."""
+    """The scoring head ships as safetensors; .pt is accepted for older dumps."""
     st = os.path.join(path, "head.safetensors")
     if os.path.exists(st):
         from safetensors.torch import load_file
@@ -45,21 +57,21 @@ class Scorer(nn.Module):
 
 
 dev = "cuda" if torch.cuda.is_available() else "cpu"
-cal_path = os.path.join(a.model, "calibration.json")
 max_len = 256
+cal_path = os.path.join(a.model, "calibration.json")
 if os.path.exists(cal_path):
     max_len = int(json.load(open(cal_path)).get("max_len", 256))
 
 tok = AutoTokenizer.from_pretrained(a.model)
 model = Scorer(a.model).eval().to(dev)
-print(f"{a.tag}: устройство {dev}, max_len {max_len}", flush=True)
+print(f"{a.tag}: device {dev}, max_len {max_len}", flush=True)
 
-rows = [json.loads(l) for l in open(a.rows, encoding="utf-8")]
+rows = [json.loads(l) for l in open(a.rows, encoding="utf-8") if l.strip()]
 ok = 0
 with torch.no_grad(), open(a.out, "w", encoding="utf-8") as fh:
     for i, r in enumerate(rows):
         text = r.get("text", r.get("input"))
-        opts = r["options"]
+        opts = [str(o) for o in r["options"]]
         enc = tok([text] * len(opts), opts, truncation=True,
                   max_length=max_len, padding=True, return_tensors="pt").to(dev)
         logits = model(enc["input_ids"], enc["attention_mask"]).float().cpu()
@@ -72,6 +84,6 @@ with torch.no_grad(), open(a.out, "w", encoding="utf-8") as fh:
         fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
         ok += int(pick == int(r["answer"]))
         if (i + 1) % 2000 == 0:
-            print(f"  {i+1}/{len(rows)} точность пока {ok/(i+1):.4f}", flush=True)
+            print(f"  {i+1}/{len(rows)} accuracy so far {ok/(i+1):.4f}", flush=True)
 
-print(f"{a.tag}: готово, {ok} из {len(rows)}, точность {ok/len(rows):.4f}", flush=True)
+print(f"{a.tag}: done, {ok} of {len(rows)}, accuracy {ok/len(rows):.4f}", flush=True)
