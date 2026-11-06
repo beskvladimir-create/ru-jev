@@ -11,3 +11,15 @@ license: MIT
 version: 1.3.0
 date-released: "2026-11-05"
 repository-code: "https://github.com/beskvladimir-create/ru-jev"
+preferred-citation:
+  type: article
+  title: "Label-Wording Augmentation in a Typed-Decision Encoder: Gains on Unfamiliar Words, Not on Abbreviations or Codes"
+  authors:
+    - family-names: Beskorovainyi
+      given-names: Vladimir
+      orcid: "https://orcid.org/0009-0004-7005-6242"
+      affiliation: "Besk Tech"
+  year: 2026
+  journal: "arXiv"
+  doi: "10.48550/arXiv.2611.08439"
+  url: "https://arxiv.org/abs/2611.08439"

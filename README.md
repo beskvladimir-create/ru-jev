@@ -10,6 +10,8 @@ closed perimeter where sending data to an external API is not allowed.
 
 - Weights and model card: https://huggingface.co/besktech/ru-jev
 - Project page: https://ru-jev.besk.tech
+- Preprint: https://arxiv.org/abs/2611.08439
+- Archived release: https://doi.org/10.5281/zenodo.23986846
 
 **Not affiliated with TypeSafe AI. Not trained on Jev outputs.** Ru-Jev is trained
 independently. The scoring head is trained from random initialisation and the
@@ -296,6 +298,36 @@ the licence of each source and the reasoning behind the exclusions.
 - RuReviews (Apache-2.0): sentiment
 - RuDetoxifier data (MIT): toxicity
 - RuCoLA (Apache-2.0 labels): acceptability
+
+## Citation
+
+The preprint is [arXiv:2611.08439](https://arxiv.org/abs/2611.08439). This
+repository is archived at Zenodo under
+[10.5281/zenodo.23986846](https://doi.org/10.5281/zenodo.23986846), which always
+resolves to the latest version. Cite 10.5281/zenodo.23986847 for the exact
+version the paper was written against, tag `v1.3.0`.
+
+```bibtex
+@misc{beskorovainyi2026rujev,
+  title         = {Label-Wording Augmentation in a Typed-Decision Encoder: Gains on Unfamiliar Words, Not on Abbreviations or Codes},
+  author        = {Beskorovainyi, Vladimir},
+  year          = {2026},
+  eprint        = {2611.08439},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2611.08439}
+}
+
+@software{beskorovainyi2026rujevcode,
+  title     = {Ru-Jev: open typed-decision model (v1.3) — code, per-row results and evaluation scripts},
+  author    = {Beskorovainyi, Vladimir},
+  year      = {2026},
+  version   = {1.3.0},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.23986846},
+  url       = {https://doi.org/10.5281/zenodo.23986846}
+}
+```
 
 ## License
 

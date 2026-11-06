@@ -219,4 +219,4 @@ and all of them are single-run work.
 Code and weights are MIT. The training data keep the licences of their sources,
 listed per source in `DATASETS.md`; none of the ten datasets ships a LICENSE
 file, so every licence there is the `license` field of the repository's README
-metadata. Citation details are in the paper.
+metadata. How to cite the paper and the archived release is in `README.md`.
