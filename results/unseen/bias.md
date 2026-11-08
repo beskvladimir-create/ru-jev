@@ -84,6 +84,10 @@ CEDR emotions, `грусть` held at zero:
 
 Temperature fitted with them: v1.1 2.329, v1.3 1.379.
 
+On emotions the biases leave nothing between the two releases. After them the
+difference is +0.014, and the interval covers zero both over rows and over
+labels.
+
 The two columns that carry the news story are the first and the last. The later
 release has to be pushed 0.404 further off `политика` and 0.575 further towards
 `экономика` than the earlier one, which is the same thing the per-label counts

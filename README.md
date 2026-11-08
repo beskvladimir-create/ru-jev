@@ -87,6 +87,8 @@ there. On the news rubrics that no release trained on, this lifts v1.3 from
 `results/unseen/bias.md` has the figures and
 `results/analysis/unseen_bias.py` reproduces them. The biases belong to the
 label set they were fitted on and do not carry over to a different one.
+v1.1 rises to 0.673 under the same fit, so v1.3 stays about three points
+behind on this set.
 
 Per task:
 
