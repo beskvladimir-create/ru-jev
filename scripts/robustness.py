@@ -122,8 +122,8 @@ def dump_rows(args):
                     "answer": order.index(0),
                 }, ensure_ascii=False) + "\n")
                 written += 1
-    print(f"строк выгружено: {written} в {args.dump}")
-    print(f"словарей: {len(VOCABS)}  вопросов на словарь: {len(cases)}")
+    print(f"rows written: {written} to {args.dump}")
+    print(f"vocabularies: {len(VOCABS)}  questions per vocabulary: {len(cases)}")
 
 
 def main():
@@ -151,8 +151,11 @@ def main():
     # that --dump and the scorer below can never drift apart.
     cases = build_cases(args.n, args.options)
 
-    print(f"модель: {args.model}  T={T}  вопросов на словарь: {len(cases)}\n")
-    print("| словарь | есть в обучении с | верно | средняя уверенность | уверенно неверно |")
+    # The vocabulary names and the "seen from" marks are data values: they are
+    # written into every dump as the fields "vocab" and "seen_from", and every
+    # published table is keyed by them. CODEBOOK.md glosses each one.
+    print(f"model: {args.model}  T={T}  questions per vocabulary: {len(cases)}\n")
+    print("| vocabulary | in training since | correct | mean confidence | confidently wrong |")
     print("|---|---|---|---|---|")
     for name, table, seen in VOCABS:
         def surface(lab):
@@ -183,7 +186,7 @@ def main():
         if name == "жаргон":
             cl = [i for i, (_, gold, _) in enumerate(cases) if gold in CLEAN]
             n_cl = sum(hits[i] for i in cl)
-            print(f"| жаргон, чистое подмножество | нигде | {n_cl}/{len(cl)} = "
+            print(f"| жаргон, clean subset | нигде | {n_cl}/{len(cl)} = "
                   f"{n_cl/max(len(cl), 1):.3f} | | |")
 
 

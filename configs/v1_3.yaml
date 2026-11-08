@@ -1,20 +1,23 @@
-# Ru-Jev v1.3. Два изменения против v1.2.
+# Ru-Jev v1.3. Two changes against v1.2.
 #
-# Первое обязательное. v1.2 обучалась без rucola и terra: хаб не отдал их один
-# раз, сборщик написал [skip] и прогон пошёл дальше. На rucola она отвечает
-# монеткой, 0.467 при 0.909 у v1.1, поэтому публиковать её нельзя. Сборка теперь
-# повторяет загрузку и останавливается, если состав неполный.
+# The first is a repair. v1.2 trained without rucola and terra: the hub failed to
+# serve them once, the builder printed [skip] and the run continued. On rucola it
+# answers at the level of a coin, 0.467 against 0.909 for v1.1, so it cannot be
+# published. The build now retries the download and stops if the composition is
+# incomplete.
 #
-# Второе по сути. Метки интентов дополнены транслитерациями английского ключа
-# кириллицей и усечёнными формами. v1.2 показала, что модель обобщает форму
-# метки, а не слова: обучение на фразах подняло названия служб, которых в
-# обучении не было, с 0.835 до 0.894. Жаргон при этом не двинулся, 0.633 против
-# 0.608, потому что перефразировки о нём ничего не говорят. Ставка в том, что
-# транслитерации сработают так же. Жаргон сценариев в обучение не идёт и
-# остаётся отложенным тестом.
+# The second is the substance. The intent labels are extended with
+# transliterations of the English key into Cyrillic and with clipped forms. v1.2
+# showed that the model generalises the form of a label rather than its words:
+# training on phrases lifted the department names, which were not in training,
+# from 0.835 to 0.894. Jargon did not move, 0.633 against 0.608, because
+# paraphrases say nothing about it. The bet is that transliterations will work
+# the same way. Scenario jargon does not go into training and stays a held-out
+# test.
 #
-# Четыре эпохи вместо трёх: у v1.2 ошибка на обучении к концу всё ещё падала.
-# Чекпойнт каждой эпохи забирается отдельно, лучший выбирается замером.
+# Four epochs instead of three: for v1.2 the training loss was still falling at
+# the end. The checkpoint of every epoch is kept separately and the best one is
+# chosen by measurement.
 base_model: jhu-clsp/mmBERT-base      # MIT, multilingual, 307M
 out_dir: out/ru-jev-v1.3
 max_len: 256

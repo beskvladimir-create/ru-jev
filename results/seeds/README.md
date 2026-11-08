@@ -48,8 +48,9 @@ coincides with an ordinary Russian word removed, the two base runs give 0.645 an
 **Seed spread of the v1.1 recipe.** Two replicates, 0.658 and 0.622 on jargon
 with all labels, 0.645 and 0.599 on the clean slice. The released v1.1 sits
 between them in both cases, at 0.633 and 0.624. The spread is 0.036 and 0.046.
-The v1.3 gain over v1.1 on the same column is 0.222 and 0.214, five to six times
-that spread, which is the only thing these runs are evidence for.
+The v1.3 gain over v1.1 on the same column is 0.222 and 0.214, four to six times
+that spread (0.222/0.036 = 6.2 on all labels, 0.214/0.046 = 4.7 on the clean
+slice), which is the only thing these runs are evidence for.
 
 **Nothing about v1.3.** No valid replicate of v1.3 exists. The augmented runs
 land in the v1.1 and v1.2 band, which is what a run without the jargon lesson is
@@ -67,4 +68,5 @@ The per-row validation scores of these runs are not published. They are scores o
 checkpoints trained on a mixture that no release was built from, and nothing in
 the paper is measured on them.
 
-`НАЙДЕНО.md` is the working record of the mistake, in Russian, kept as written.
+`FINDINGS.md` is the working record of the mistake, kept as written and
+translated into English.

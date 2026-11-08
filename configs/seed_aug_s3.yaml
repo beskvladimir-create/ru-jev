@@ -1,7 +1,9 @@
-# Сид-прогон 3 рецепта v1.3 (с формулировками). Отличается от configs/v1_3.yaml
-# ровно одним полем seed. Данные НЕ пересобираются: берётся уже лежащая сборка,
-# иначе поменяются формулировки вариантов в строках и сравнение по шести задачам
-# перестанет быть сравнением. Релизные веса это seed 42, их не трогаем.
+# Seed run 3 of the v1.3 recipe, the one with the label wordings. It differs
+# from configs/v1_3.yaml in the seed field alone. The data are NOT rebuilt: the
+# build that is already on disk is used, because otherwise the wording of the
+# options inside the rows would change and the comparison over the six tasks
+# would stop being a comparison. The released weights are seed 42 and are left
+# alone.
 base_model: jhu-clsp/mmBERT-base
 out_dir: out/seed-aug-s3
 data_dir: data

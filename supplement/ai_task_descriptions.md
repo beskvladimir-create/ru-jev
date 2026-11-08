@@ -1,0 +1,845 @@
+# Task descriptions given to the AI coding agent
+
+## What this file is
+
+Every piece of code, data-building, training, evaluation and analysis in this
+repository was written and run by Claude Code, an AI coding agent, to the task
+descriptions below. There is no pre-AI version of the code: the project was
+started with the agent and no part of it was written by hand first and handed
+over afterwards. The author set the tasks, supplied the probe vocabularies, made
+the judgement calls, checked the results and is responsible for the contents.
+
+The tasks are reproduced from the Claude Code session transcripts of the project,
+in chronological order. Each entry gives the date, the original text as it was
+sent, and an English translation. Most of the originals are in Russian, which is
+the language the project was run in; where the original was already in English it
+is marked and not duplicated.
+
+## What is included and what is not
+
+Included: tasks about code, data, training, evaluation, probes, label
+vocabularies, analysis and calibration.
+
+Not included: tasks about the text of the paper, of blog posts and of the model
+card, about the landing page, about search engine optimisation and analytics,
+about billing for the rented GPU, and the short conversational turns in between
+("is it done?", "how much longer?"). A task that mixed both kinds is included in
+full when its substance is code or data.
+
+Two limits of the record, stated so that the gaps are not mistaken for
+completeness. The surviving session history of this project begins on 2026-11-01.
+The work before that, which produced the v1 release, is present only as
+compaction summaries and its original task texts are not recoverable. And the
+agent's own intermediate decisions, the ones not dictated by a task, are visible
+in the repository as commits and in the working notes in `results/`, not here.
+
+## The model
+
+The tasks below were carried out by Claude Code. The session that holds all of
+the work from 2026-11-02 to 2026-11-08, which is every task in this file from the
+second entry onwards, ran on Claude Opus 5, model id `claude-opus-5`. The earlier
+session of 2026-11-01, in which the project was named, the landing page was built
+and the first weights were uploaded, ran on Claude Opus 4.8, model id
+`claude-opus-4-8`. Both identities are taken from the `model` field of the
+session transcripts rather than from memory.
+
+---
+
+## 2026-11-02. Continue training and improve the result
+
+Original:
+
+```text
+Лучше доубучить и вообще я бы хотел по максимум улучшить результат
+```
+
+Translation:
+
+```text
+Better to train further, and in general I would like to improve the result as much as possible.
+```
+
+
+## 2026-11-02. Create the public code repository
+
+Original:
+
+```text
+cd ~/Desktop/Projects/ru-jev/code && gh repo create ru-jev --public --source=. --remote=origin --push \
+  -d "Ru-Jev: an open Russian typed-decision model. Calibrated choices over a fixed option set, on CPU."
+```
+
+Translation:
+
+```text
+(a shell command, run as given)
+```
+
+
+## 2026-11-02. Push the quality as far as it goes
+
+Original:
+
+```text
+го, давай улучшать по максимуму станем лучшими
+```
+
+Translation:
+
+```text
+Go ahead, let us improve as much as we can and become the best.
+```
+
+
+## 2026-11-02. Is this the last run, and why not run the model on my own machine
+
+*This is what started the CPU latency measurements and the serving path.*
+
+Original:
+
+```text
+Это кроайний прогон и все? И почему если модель такая слабая и маленькая мы не запускаем ее на моем компе?
+```
+
+Translation:
+
+```text
+Is this the last run and that is all? And why, if the model is so weak and small, are we not running it on my computer?
+```
+
+
+## 2026-11-02. Spend the remaining GPU budget on further runs
+
+Original:
+
+```text
+Я пополнил можешь хоть несколько прогонов сделать пока все неистратишь добейся максималбьно результата за эти деньги я хочу максимально хороший резульитат получить старайся если надо используй для расууждений Fable
+```
+
+Translation:
+
+```text
+I have topped up the account. Can you do at least several runs until it is all spent. Get the maximum result for that money, try hard, and use Fable for reasoning if you need to.
+```
+
+
+## 2026-11-02. Publish v1.1 and carry on
+
+Original:
+
+```text
+публикуй 1.1 и делай дальше
+```
+
+Translation:
+
+```text
+Publish 1.1 and carry on.
+```
+
+
+## 2026-11-03. Release a new version only if it is really better
+
+Original:
+
+```text
+ну ставить только если реально лучше а просто так зачем ставить
+```
+
+Translation:
+
+```text
+Only put it up if it is really better. Why put it up otherwise.
+```
+
+
+## 2026-11-04. Seed replicates, comparison with external models, and a dump of raw scores
+
+*This task set the seed arm, the choice of comparison models and the rule that a dataset is only usable if its licence is checked in a file. The seed runs it asked for turned out to have trained on a stale mixture, which is written up in results/seeds/FINDINGS.md.*
+
+Original:
+
+```text
+Вот что предлагает другой 
+
+
+Задача на сегодня, всё параллельно на арендованной карте.
+
+A. Сиды (устойчивость не должна зависеть от зерна).
+- Дообучить ещё по 2 прогона каждого рецепта (baseline и augmented) с другими seed,
+  тот же конфиг, 3 эпохи, чекпойнт эпохи 3.
+- Для каждого прогона посчитать: стенд формулировок (scripts/robustness.py, 6 строк,
+  обе пары: 15 и 18 категорий), токсичность на переименованных метках,
+  6 сопоставимых задач на полном наборе (10 157 строк).
+- Итог: среднее и разброс по 3 сидам для каждой цифры. Отдельно: держится ли
+  разрыв на жаргоне (0.624 против 0.838) во всех сидах.
+- Релизные веса не трогать, выложенная модель остаётся seed 1.
+
+B. Сравнение с внешними моделями, тот же стенд и те же строки.
+- Модели: Laya Multilingual (convaiinnovations/laya-multilingual),
+  openjev 9B, Open-Jev (Zefan Cai, Qwen), небольшой Qwen по логитам вариантов.
+  openjev 27B только если влезает в карту. Если какой-то модели нет или
+  она не запускается, записать причину и идти дальше.
+- Три блока, каждый подписан отдельно, не смешивать:
+  1) задачи, на которых Ру-Жев учился (in-domain, у остальных zero-shot),
+  2) 1–2 русских набора, которых не видела ни одна модель, включая Ру-Жев
+     (кандидаты из ruMTEB: HeadlineClassification, KinopoiskClassification,
+     InappropriatenessClassification; брать только с лицензией, разрешающей
+     коммерческое использование, лицензию проверить по файлу),
+  3) стенд формулировок на MASSIVE (пометить, что Ру-Жев видел обучающую часть MASSIVE).
+- Для каждой модели: точность, ECE с температурой на непересекающейся половине,
+  средняя уверенность против точности, задержка на CPU (то же железо, что в карточке),
+  размер модели.
+
+C. Выгрузка.
+- Все сырые скоры и итоговые таблицы положить в
+  ~/Desktop/Projects/ru-jev/articles/results/ (CSV или JSON, плюс README с
+  командами запуска и коммитом). Оттуда их сверит второй агент.
+- Карточку и тексты пока не править, только посчитать.
+- Если что-то не успевает за 3 часа, сообщить, что именно и сколько осталось.
+```
+
+Translation:
+
+```text
+Here is what the other one proposes.
+
+Task for today, all of it in parallel on the rented card.
+
+A. Seeds (robustness must not depend on the seed).
+- Train 2 more runs of each recipe (baseline and augmented) with different seeds,
+  the same config, 3 epochs, the checkpoint of epoch 3.
+- For every run compute: the wording bench (scripts/robustness.py, 6 rows, both
+  settings: 15 and 18 categories), toxicity on the renamed labels, and the 6
+  comparable tasks on the full set (10,157 rows).
+- Result: the mean and the spread over 3 seeds for every figure. Separately:
+  does the jargon gap (0.624 against 0.838) hold across all seeds.
+- Do not touch the released weights; the published model stays seed 1.
+
+B. Comparison with external models, the same bench and the same rows.
+- Models: Laya Multilingual (convaiinnovations/laya-multilingual), openjev 9B,
+  Open-Jev (Zefan Cai, Qwen), a small Qwen scored by option logits. openjev 27B
+  only if it fits on the card. If a model is missing or will not run, record the
+  reason and move on.
+- Three blocks, each labelled separately, not mixed:
+  1) tasks Ru-Jev trained on (in-domain for it, zero-shot for the others),
+  2) 1 or 2 Russian datasets no model has seen, Ru-Jev included (candidates from
+     ruMTEB: HeadlineClassification, KinopoiskClassification,
+     InappropriatenessClassification; take only those whose licence permits
+     commercial use, and check the licence in a file),
+  3) the wording bench on MASSIVE (note that Ru-Jev saw the training part of MASSIVE).
+- For every model: accuracy, ECE with the temperature fitted on a disjoint half,
+  mean confidence against accuracy, CPU latency (the same hardware as in the model
+  card), model size.
+
+C. The dump.
+- Put all raw scores and the final tables in
+  ~/Desktop/Projects/ru-jev/articles/results/ (CSV or JSON, plus a README with the
+  commands and the commit). A second agent will check them from there.
+- Do not edit the model card or the texts yet, only compute.
+- If something will not fit in 3 hours, say what and how much is left.
+```
+
+
+## 2026-11-05. Probe on a vocabulary of a different kind, fixed before the measurement
+
+*The first of the probe tasks. It fixes the rule that a label coinciding with training is excluded from the headline figure rather than replaced, which is what the 'clean' slices in results/vocab2 and results/vocab3 implement.*
+
+Original:
+
+```text
+Проверка устойчивости на словаре другого типа. Бесплатно, на Маке, без обучения.
+
+1. Словарь ниже зафиксирован до замера. После просмотра результатов не менять.
+   [вставить таблицу из 18 строк: сценарий, стиль B, стиль A]
+2. Перед замером сверить каждую метку со ВСЕМИ строками вариантов обучающей смеси
+   v1.3 (текущий сборщик) и v1.1. Совпавшие метки не заменять, а исключить
+   из главной цифры и показать отдельно, как сделано с 15 из 18 для жаргона.
+3. Те же 1000 вопросов стенда, тот же порядок вариантов (crc32).
+   Модели: v1.1 (ship), v1.3 (ship), Laya с инструкцией A.
+4. Для каждого стиля: точность (все 18 и чистые), средняя уверенность,
+   зазор уверенности и точности, уверенно неверных из 1000.
+5. Результат в articles/results/vocab2/ (строки, сырые скоры, table.md, скрипт).
+   Карточку и тексты не трогать.
+```
+
+Translation:
+
+```text
+A robustness check on a vocabulary of a different kind. Free, on the Mac, no training.
+
+1. The vocabulary below is fixed before the measurement. Do not change it after
+   seeing the results.
+   [insert the table of 18 rows: scenario, style B, style A]
+2. Before measuring, check every label against ALL option strings of the v1.3
+   training mixture (current builder) and of v1.1. Labels that coincide are not to
+   be replaced but excluded from the headline figure and shown separately, the way
+   15 of 18 was done for jargon.
+3. The same 1,000 bench questions, the same option order (crc32).
+   Models: v1.1 (ship), v1.3 (ship), Laya with instruction A.
+4. For each style: accuracy (all 18 and clean), mean confidence, the gap between
+   confidence and accuracy, confident errors per 1,000.
+5. The result in articles/results/vocab2/ (rows, raw scores, table.md, the script).
+   Do not touch the model card or the texts.
+```
+
+
+## 2026-11-05. The slang and code vocabulary, supplied verbatim
+
+*THIS IS THE TASK THAT SET THE PROBE VOCABULARY. It gives all 18 labels of both styles literally, style B as everyday slang and style A as opaque three-letter codes, and forbids the agent from inventing or substituting any of them. The vocabulary it fixes is results/vocab3/vocab.json, sha256 ae8b9463ad009d2812b57505b1cd672f0007c9f3587d494cedf2bb4bfa656c1b, and it is the probe the paper reports as the independent one.*
+
+Original:
+
+```text
+Повторить vocab2 строго по моему словарю, без замен.
+1. Метки ровно эти (стиль B — сленг, стиль A — коды), ничего не придумывать:
+   alarm: побудка / БДК; audio: крутилка звука / ГРМ; calendar: ежедневник / КЛН;
+   cooking: поварёнок / КУХ; datetime: который час / ВРМ; email: ящик / ЭП;
+   general: болталка / ОБЩ; iot: розетки и лампы / УД; lists: перечни / СПК;
+   music: пластинки / МУЗ; news: сводка / НОВ; play: развлекалово / МЕД;
+   qa: справочное бюро / СПР; recommendation: что посоветуешь / СОВ;
+   social: лента друзей / СОЦ; takeaway: курьерка / ДОСТ; transport: извозчик / ТР;
+   weather: синоптик / ПГД.
+2. Постановка как на основном стенде: те же 1000 вопросов, все 18 категорий
+   в каждом вопросе (не 5), порядок по crc32.
+3. Проверка пересечения с обучением как в прошлый раз: точное совпадение
+   исключить из чистой цифры, префиксную связь показать отдельно.
+4. Модели v1.1 ship, v1.3 ship, Laya instr A. Те же колонки плюс таблица по меткам.
+5. Положить в results/vocab3/. Прошлый vocab2 оставить как есть.
+```
+
+Translation:
+
+```text
+Repeat vocab2 strictly on my vocabulary, with no substitutions.
+
+1. The labels are exactly these (style B is slang, style A is codes), invent nothing:
+   alarm: побудка / БДК; audio: крутилка звука / ГРМ; calendar: ежедневник / КЛН;
+   cooking: поварёнок / КУХ; datetime: который час / ВРМ; email: ящик / ЭП;
+   general: болталка / ОБЩ; iot: розетки и лампы / УД; lists: перечни / СПК;
+   music: пластинки / МУЗ; news: сводка / НОВ; play: развлекалово / МЕД;
+   qa: справочное бюро / СПР; recommendation: что посоветуешь / СОВ;
+   social: лента друзей / СОЦ; takeaway: курьерка / ДОСТ; transport: извозчик / ТР;
+   weather: синоптик / ПГД.
+2. The setting as on the main bench: the same 1,000 questions, all 18 categories in
+   every question (not 5), the order by crc32.
+3. The check against training as last time: an exact match is excluded from the
+   clean figure, a prefix relation is shown separately.
+4. Models v1.1 ship, v1.3 ship, Laya instr A. The same columns plus a per-label table.
+5. Put it in results/vocab3/. Leave the earlier vocab2 as it is.
+```
+
+
+## 2026-11-05. Slices, the McNemar test, and a reading rule recorded before the figures
+
+*This is the pre-registration of the vocab3 result. The rule it dictates was written into results/vocab3/README.md at 08:53:11 +04 and the Russian original of it is kept there verbatim.*
+
+Original:
+
+```text
+Сверка принята. К отчёту vocab3 добавить:
+
+1. Три среза для каждого стиля: все 18; чистые по точному совпадению
+   (A 17, B 18); строгие, чистые по обоим критериям (A 9, B 14).
+   Для каждого среза указать n вопросов.
+2. Для разницы v1.3 минус v1.1 на каждом срезе: парный тест Макнемара
+   (p-value) и число вопросов, где версии расходятся в каждую сторону.
+3. Правило прочтения фиксируем сейчас, до цифр. Главный срез — стиль B, строгий:
+   - v1.3 выше v1.1 и p < 0.05 → устойчивость переносится на сленг;
+   - p ≥ 0.05 → переноса нет, разница в шуме;
+   - v1.3 ниже v1.1 и p < 0.05 → расширение вредит на этом типе формы.
+   Стиль A читаем по тому же правилу, но как нижнюю границу.
+   Отдельно по каждому срезу: зазор уверенности и число уверенных ошибок.
+4. Правило записать в vocab3/README.md с отметкой времени до запуска замера.
+```
+
+Translation:
+
+```text
+The check is accepted. Add to the vocab3 report:
+
+1. Three slices for each style: all 18; clean by exact match (A 17, B 18); strict,
+   clean by both criteria (A 9, B 14). Give n questions for each slice.
+2. For the difference of v1.3 minus v1.1 on each slice: a paired McNemar test
+   (p-value) and the number of questions where the releases disagree in each
+   direction.
+3. We fix the reading rule now, before the figures. The main slice is style B,
+   strict:
+   - v1.3 above v1.1 and p < 0.05 means the robustness carries over to slang;
+   - p >= 0.05 means it does not carry over and the difference is noise;
+   - v1.3 below v1.1 and p < 0.05 means the augmentation hurts on this kind of form.
+   Style A is read by the same rule, but as a lower bound.
+   For each slice separately: the confidence gap and the number of confident errors.
+4. Write the rule into vocab3/README.md with a timestamp taken before the
+   measurement is started.
+```
+
+
+## 2026-11-05. Recompute the bench at 18 candidates, audit the overlap, settle toxicity, measure latency
+
+*The source of results/fix18/AUDIT.md.*
+
+Original:
+
+```text
+Срочно, только инференс на Маке, без обучения. Результаты в results/fix18/.
+1. Пересчитать основной стенд (6 словарей, те же 1000 вопросов) с ВСЕМИ 18
+   вариантами в каждом вопросе, как в vocab3. Модели: v1.1 ship, v1.3 ship,
+   Laya instr A. Те же колонки: точность, средняя уверенность, зазор,
+   уверенно неверных из 1000, плюс таблица по меткам.
+2. Аудит пересечения шести словарей основного стенда с пересобранными
+   обучающими смесями v1.1 и v1.3: точное совпадение и префикс в обе стороны,
+   отдельно для верной метки и для отвлекающих вариантов (overlap.py).
+   Особенно «русское слово» и «русская фраза»: не совпадают ли они
+   со стилями SCENARIO_RU и SCENARIO_PHRASE из обучения.
+3. Токсичность 0.722 → 0.954: выгрузить сырой файл и проверить, были ли
+   «переименованные» метки в обучающей смеси v1.3. Ответ да или нет с доказательством.
+4. Задержка на одном и том же M4: Ру-Жев и Laya при k=2, 5, 18 вариантах,
+   медиана 25 прогонов.
+5. Перенести все скрипты из скрадчпада в репозиторий и дать коммит.
+Карточку и тексты не трогать.
+```
+
+Translation:
+
+```text
+Urgent, inference on the Mac only, no training. Results in results/fix18/.
+
+1. Recompute the main bench (6 vocabularies, the same 1,000 questions) with ALL 18
+   candidates in every question, as in vocab3. Models: v1.1 ship, v1.3 ship, Laya
+   instr A. The same columns: accuracy, mean confidence, the gap, confident errors
+   per 1,000, plus a per-label table.
+2. Audit the overlap of the six main bench vocabularies with the rebuilt v1.1 and
+   v1.3 training mixtures: exact match and prefix in both directions, separately for
+   the correct label and for the distractors (overlap.py). In particular "русское
+   слово" and "русская фраза": do they coincide with the training styles SCENARIO_RU
+   and SCENARIO_PHRASE.
+3. Toxicity 0.722 to 0.954: dump the raw file and check whether the "renamed" labels
+   were in the v1.3 training mixture. A yes or no with evidence.
+4. Latency on one and the same M4: Ru-Jev and Laya at k = 2, 5, 18 candidates, the
+   median of 25 runs.
+5. Move every script from the scratchpad into the repository and give me the commit.
+Do not touch the model card or the texts.
+```
+
+
+## 2026-11-05. Publish the results and the scripts, fix two scripts, prepare the repository for PeerJ
+
+*The first task that named PeerJ. Item 6 is the request for the model identity that this file records.*
+
+Original:
+
+```text
+Только код и хаб. Тексты и main.tex не трогать, их ведёт другой агент.
+1. Выложить в GitHub: articles/results/ (bench_*, unseen/, vocab2/, vocab3/, fix18/, analysis/;
+   seeds/*.jsonl НЕ выкладывать, только seeds/НАЙДЕНО.md), все vocab.json,
+   overlap.py, build_*.py, latency.py, calib.py, compare_rows.py.
+   Файл SHA256SUMS: веса и головы обеих версий (fix18/comparable.md) и файлы правила
+   прочтения vocab3. Всё, что обещает раздел «Data and code availability» в main.tex,
+   должно лежать в репозитории.
+2. Починить unseen_table.py (не импортирована _calibration) и coverage.py (scores → logits).
+3. README: точность 0.8210 свести с препринтом (0.818 вся валидация, 0.823 отложенная
+   половина), убрать фразу про опубликованный чекпойнт v1. Скрипт, воспроизводящий T=1.8640.
+4. Карточку на HF привести к выводам препринта и залить вместе с head.safetensors одним коммитом.
+5. Для PeerJ: английские комментарии и вывод в скриптах, README по шаблону PeerJ, закрепить
+   версии (laya, ревизии датасетов), указать железо и GPU-часы, лицензии headline и CEDR
+   в DATASETS.md.
+6. Сообщить, на какой модели и какой версии работает Claude Code. Это нужно для раздела
+   «Use of AI tools».
+Коммиты только от имени автора, без Co-authored-by.
+```
+
+Translation:
+
+```text
+Code and the hub only. Do not touch the texts or main.tex, another agent runs them.
+
+1. Publish to GitHub: articles/results/ (bench_*, unseen/, vocab2/, vocab3/, fix18/,
+   analysis/; do NOT publish seeds/*.jsonl, only seeds/FINDINGS.md), every vocab.json,
+   overlap.py, build_*.py, latency.py, calib.py, compare_rows.py. A SHA256SUMS file:
+   the weights and the heads of both releases (fix18/comparable.md) and the files of
+   the vocab3 reading rule. Everything the "Data and code availability" section of
+   main.tex promises has to be in the repository.
+2. Fix unseen_table.py (_calibration is not imported) and coverage.py (scores to logits).
+3. README: reconcile the accuracy 0.8210 with the preprint (0.818 on the whole
+   validation split, 0.823 on the held-out half), remove the sentence about a
+   published v1 checkpoint. A script that reproduces T = 1.8640.
+4. Bring the model card on the hub in line with the preprint's conclusions and upload
+   it together with head.safetensors in one commit.
+5. For PeerJ: English comments and English output in the scripts, a README on the
+   PeerJ template, pinned versions (laya, dataset revisions), the hardware and the
+   GPU hours, the licences of headline and CEDR in DATASETS.md.
+6. Report which model and which version Claude Code runs on. This is needed for the
+   "Use of AI tools" section.
+Commits in the author's name only, no Co-authored-by.
+```
+
+
+## 2026-11-05. Publish the files the availability section promises, and report the model version
+
+Original:
+
+```text
+Claude Code должен выложить в репозиторий файлы, которые обещает раздел «Data and code availability»: построчные оценки, хеши и скрипты.
+Мне нужна версия модели Claude Code для раздела об использовании ИИ. Пришлите её, я впишу и снова пересоберу PDF.
+```
+
+Translation:
+
+```text
+Claude Code is to publish the files that the "Data and code availability" section
+promises: the per-row scores, the hashes and the scripts.
+I need the model version of Claude Code for the section on the use of AI. Send it to
+me, I will write it in and rebuild the PDF.
+```
+
+
+## 2026-11-05. Publish everything the availability section promises and verify it through the live links
+
+*Original in English.*
+
+Original:
+
+```text
+Before arXiv submission, publish everything the paper's "Data and code availability" section promises, then verify via the live links:
+1. HF besktech/ru-jev: upload the updated model card and head.safetensors together (the card must no longer show 0.7948/0.7920, ECE 0.0172/0.0160, "slightly better calibrated", or load head.pt).
+2. GitHub beskvladimir-create/ru-jev: add scoring/analysis scripts (score_rujev.py, score_laya.py, aggregate.py, unseen_table.py, build_unseen.py, score_one.py, results/analysis/final.py), all per-row jsonl results, vocab.json, overlap*.json, SPLIT_SEED, SHA256SUMS.
+3. results/seeds/: seed-base-s2, seed-base-s3, seed-aug-s2, seed-aug-s3 bench files + README; add to SHA256SUMS.
+4. The split-leakage intersection output (90.3% rucola, 89.8% mera_qa, 47.2% georeview, 21.7% toxicity) as a file plus the script that produced it.
+Report the commit hash and the HF revision when done.
+```
+
+
+## 2026-11-05. Mint a DOI for the release
+
+*Original in English.*
+
+Original:
+
+```text
+Zenodo integration is now ON for beskvladimir-create/ru-jev. Create a DOI-minting release:
+1. Add CITATION.cff at repo root: title "Ru-Jev: open typed-decision model (v1.3) — code, per-row results and evaluation scripts", author Vladimir Beskorovainyi, ORCID https://orcid.org/0009-0004-7005-6242, affiliation Besk Tech, license MIT, version 1.3.0, date-released 2026-11-05, repository-code https://github.com/beskvladimir-create/ru-jev. Validate it (cffconvert --validate or equivalent). Commit and push.
+2. Create GitHub release tag v1.3.0 on that commit, title "Ru-Jev v1.3.0", notes: one paragraph saying this is the code and evaluation data accompanying the preprint "Label-Wording Augmentation in a Typed-Decision Encoder: Gains on Unfamiliar Words, Not on Abbreviations or Codes".
+3. Wait for Zenodo to archive it (check https://zenodo.org/account/settings/github/ or the release webhook), then report BOTH DOIs: the version DOI for v1.3.0 and the concept DOI.
+```
+
+
+## 2026-11-05. Check the standard zero-shot pipeline against the card's own example
+
+*Original in English. The check found that the standard pipeline returns numbers from a randomly initialised head.*
+
+Original:
+
+```text
+Check: does `transformers.pipeline("zero-shot-classification", model="besktech/ru-jev")` produce the same probabilities as the card's own example (head.safetensors + temperature)? If not, either change pipeline_tag in the card metadata to something that does not imply the standard pipeline (e.g. text-classification with library_name set and a clear note), or add a prominent line at the top of the card: "Do not use the standard zero-shot pipeline; use the snippet below." Report what you found and what you changed.
+```
+
+
+## 2026-11-08. Fit one additive bias per option alongside the temperature
+
+*The source of scripts/calib.py's joint fit, results/analysis/unseen_bias.py and results/unseen/bias.md.*
+
+Original:
+
+```text
+# Задача для Claude Code: смещения по вариантам рядом с температурой
+
+Репозиторий: github.com/beskvladimir-create/ru-jev. Работай в новой ветке `calib-bias`, в `main` ничего не вливай до моего подтверждения.
+
+Коммиты только от моего имени. Никаких строк Co-Authored-By и других соавторов.
+
+## Зачем
+
+На форуме HF (комментарий dipankarsarkar к посту о v1.3) показали, что провал v1.3 на рубриках новостей в основном вызван сдвигом к метке «политика», а не плохим чтением. Температура это не лечит, потому что не меняет argmax. Шесть аддитивных смещений, по одному на вариант, подогнанные на размеченной половине, снижают разрыв с 8.4 до примерно 3 пунктов. Я пообещал добавить смещения в скрипт калибровки рядом с T.
+
+## Что сделать
+
+1. Найди в репозитории скрипт подбора температуры (тот, на который ссылается карточка модели во фразе про refit the temperature on your own labels). Не создавай второй скрипт, расширь этот.
+2. Добавь режим совместной подгонки температуры T и смещений b по вариантам:
+   - оценка: `softmax(s / T + b[option])`, где `s` это сырые логиты модели, `b` индексируется по строке варианта, как её подаёт вызывающая сторона;
+   - подгонка: минимизация отрицательного логарифма правдоподобия на размеченных строках, L-BFGS, `log T` как параметр, одно смещение фиксировано в 0 для идентифицируемости;
+   - флаг, который подгоняет только T, как раньше. По умолчанию поведение скрипта не меняется, смещения включаются явным флагом, например `--biases`;
+   - вывод в JSON: `{"temperature": ..., "biases": {"<вариант>": ...}, "n_rows": ..., "options": [...]}`;
+   - если при выводе встречается вариант без подогнанного смещения, смещение 0 и предупреждение.
+3. Добавь применение этого JSON при выводе там, где сейчас применяется T: в Python-интерфейсе и, если есть, в CLI или сервере. Один и тот же файл калибровки для обоих случаев.
+4. Тест: на синтетических логитах с известным сдвигом подгонка восстанавливает знак и порядок смещений, а T при выключенных смещениях совпадает со старым кодом.
+5. Скрипт воспроизведения `results/analysis/unseen_bias.py`, детерминированный, без сети, запуск `python3 -I results/analysis/unseen_bias.py results/unseen`:
+   - на `unseen_rows.jsonl`, `unseen_v11.jsonl`, `unseen_v13.jsonl`, отдельно для рубрик новостей и эмоций;
+   - 25 случайных разбиений пополам (seed 0..24), подгонка на одной половине, оценка на другой, обе половины;
+   - печатает точность до и после для v1.1 и v1.3, с подгонкой T и без;
+   - печатает парную разницу v1.3 минус v1.1 после смещений и 95% бутстрэп-интервалы по строкам и по меткам (кластер по верной метке, seed 20261105, 5000 повторов).
+
+## Контрольные цифры
+
+Я посчитал их в своём скрипте на тех же файлах. Сообщи о любом расхождении больше 0.005.
+
+Рубрики новостей, 1000 строк, 6 вариантов:
+- без смещений: v1.1 0.652, v1.3 0.568;
+- со смещениями и T: v1.1 0.673, v1.3 0.640;
+- со смещениями без T: v1.1 0.671, v1.3 0.639;
+- парная разница после смещений −0.032, интервал по строкам [−0.059, −0.004], по меткам [−0.063, +0.003];
+- без смещений −0.084, по строкам [−0.112, −0.055], по меткам [−0.168, −0.017].
+
+Эмоции CEDR, 1000 строк, 5 вариантов:
+- без смещений: v1.1 0.455, v1.3 0.511;
+- со смещениями и T: v1.1 0.555, v1.3 0.571;
+- со смещениями без T: v1.1 0.557, v1.3 0.577.
+
+Описательные цифры, которые тоже должны совпасть: v1.3 выбирает «политика» 318 раз при 166 верных (v1.1 232 раза); из 153 строк, где права только v1.1, 41 это «экономика», прочитанная как «политика»; полнота по «экономике» 0.730 у v1.1 и 0.448 у v1.3.
+
+## Документация
+
+1. В README и в карточке модели HF, в разделе про калибровку, добавь два-три предложения:
+   - температура не меняет выбранный вариант;
+   - если на своих данных модель систематически тянет к одному варианту, подгоните смещения флагом `--biases` на той же размеченной выборке;
+   - пример: на рубриках новостей это поднимает v1.3 с 0.568 до 0.640.
+   
+   Без упоминания комментатора по имени.
+2. В `results/unseen/` добавь короткий `bias.md` с таблицей из скрипта воспроизведения.
+3. Карточку HF не публикуй, пришли мне diff.
+
+## Отчёт
+
+Пришли:
+- имя ветки, хеш коммита, список файлов;
+- вывод скрипта воспроизведения целиком;
+- все расхождения с контрольными цифрами больше 0.005;
+- diff README и карточки модели.
+```
+
+Translation:
+
+```text
+# Task for Claude Code: per-option biases alongside the temperature
+
+Repository: github.com/beskvladimir-create/ru-jev. Work in a new branch `calib-bias`,
+do not merge anything into `main` until I confirm.
+
+Commits in my name only. No Co-Authored-By lines and no other co-authors.
+
+## Why
+
+On the HF forum (a comment by dipankarsarkar under the post about v1.3) it was shown
+that the v1.3 drop on news rubrics is caused mainly by a lean towards the label
+"политика" rather than by poor reading. The temperature does not cure this, because it
+does not change the argmax. Six additive biases, one per option, fitted on a labelled
+half, reduce the gap from 8.4 to about 3 points. I promised to add the biases to the
+calibration script next to T.
+
+## What to do
+
+1. Find the temperature-fitting script in the repository (the one the model card
+   refers to in the sentence about refitting the temperature on your own labels). Do
+   not create a second script, extend this one.
+2. Add a mode that fits the temperature T and the per-option biases b jointly:
+   - the score: `softmax(s / T + b[option])`, where `s` is the model's raw logits and
+     `b` is indexed by the option string as the caller supplies it;
+   - the fit: minimisation of the negative log-likelihood over the labelled rows,
+     L-BFGS, `log T` as the parameter, one bias held at 0 for identifiability;
+   - a flag that fits T alone, as before. By default the behaviour of the script does
+     not change; the biases are switched on by an explicit flag, for example `--biases`;
+   - the JSON output: `{"temperature": ..., "biases": {"<option>": ...}, "n_rows": ...,
+     "options": [...]}`;
+   - if an option without a fitted bias is met at inference, use a bias of 0 and warn.
+3. Apply this JSON at inference wherever T is applied now: in the Python interface and,
+   if there is one, in the CLI or the server. One and the same calibration file for both.
+4. A test: on synthetic logits with a known lean the fit recovers the sign and the order
+   of the biases, and with the biases switched off T agrees with the old code.
+5. A reproduction script `results/analysis/unseen_bias.py`, deterministic, no network,
+   run as `python3 -I results/analysis/unseen_bias.py results/unseen`:
+   - on `unseen_rows.jsonl`, `unseen_v11.jsonl`, `unseen_v13.jsonl`, separately for the
+     news rubrics and the emotions;
+   - 25 random half-splits (seeds 0 to 24), fitted on one half and scored on the other,
+     both halves;
+   - prints the accuracy before and after for v1.1 and v1.3, with T fitted and without;
+   - prints the paired difference of v1.3 minus v1.1 after the biases and 95 percent
+     bootstrap intervals over rows and over labels (clustered on the correct label,
+     seed 20261105, 5,000 resamples).
+
+## Control figures
+
+I computed them in my own script on the same files. Report any disagreement larger
+than 0.005.
+
+News rubrics, 1,000 rows, 6 candidates:
+- without biases: v1.1 0.652, v1.3 0.568;
+- with biases and T: v1.1 0.673, v1.3 0.640;
+- with biases, no T: v1.1 0.671, v1.3 0.639;
+- the paired difference after the biases is -0.032, the interval over rows
+  [-0.059, -0.004], over labels [-0.063, +0.003];
+- without biases -0.084, over rows [-0.112, -0.055], over labels [-0.168, -0.017].
+
+CEDR emotions, 1,000 rows, 5 candidates:
+- without biases: v1.1 0.455, v1.3 0.511;
+- with biases and T: v1.1 0.555, v1.3 0.571;
+- with biases, no T: v1.1 0.557, v1.3 0.577.
+
+Descriptive figures that also have to match: v1.3 answers "политика" 318 times against
+166 correct (v1.1 232 times); of the 153 rows where only v1.1 is right, 41 are
+"экономика" read as "политика"; recall on "экономика" is 0.730 for v1.1 and 0.448 for v1.3.
+
+## Documentation
+
+1. In the README and in the HF model card, in the section about calibration, add two or
+   three sentences:
+   - the temperature does not change the option that is chosen;
+   - if on your own data the model leans systematically towards one option, fit the
+     biases with the `--biases` flag on the same labelled sample;
+   - an example: on the news rubrics this lifts v1.3 from 0.568 to 0.640.
+
+   Without naming the commenter.
+2. In `results/unseen/` add a short `bias.md` with the table from the reproduction script.
+3. Do not publish the model card, send me the diff.
+
+## Report
+
+Send:
+- the branch name, the commit hash, the list of files;
+- the whole output of the reproduction script;
+- every disagreement with the control figures larger than 0.005;
+- the diff of the README and of the model card.
+```
+
+
+## 2026-11-08. Verify the branch on the real weights, then merge
+
+*Original in Russian; the control criteria it lists are the ones the verification run had to meet.*
+
+Original:
+
+```text
+Проверка ветки calib-bias на настоящих весах, затем слияние.
+
+1. Подготовь окружение с torch и transformers. Если в песочнице torch сломан, создай отдельный venv вне репозитория (например ~/venvs/rujev) и поставь туда torch, transformers, safetensors. В репозиторий ничего из окружения не коммить.
+
+2. Запусти ровно свою команду проверки:
+   cd ~/Desktop/Projects/ru-jev/code
+   отфильтруй рубрики новостей из results/unseen/unseen_rows.jsonl в /tmp/news1000.jsonl (должно быть 1000 строк)
+   python scripts/fit_temperature.py --model ../model/ru-jev-v1.3/ship --rows /tmp/news1000.jsonl --out /tmp/news_cal.json --biases
+
+3. Пришли вывод целиком, без сокращений, и содержимое /tmp/news_cal.json.
+
+4. Проверка пройдена, только если совпадают все четыре пункта:
+   - accuracy 0.5680 ровно;
+   - шесть смещений совпадают с колонкой v1.3 в results/unseen/bias.md с точностью до 0.01, «культура» в нуле, «политика» самая отрицательная;
+   - temperature 1.9008 ± 0.01;
+   - accuracy out of fold 0.6387 ± 0.002.
+
+5. Если все четыре совпали:
+   - влей calib-bias в main без squash, запушь;
+   - залей model/ru-jev-v1.3/README.md в карточку besktech/ru-jev на Hugging Face (только README, веса не трогай);
+   - убедись, что на хабе в карточке есть абзац про biases и строка про 0.673.
+   Если хоть один пункт не совпал, ничего не вливай и не публикуй, пришли расхождения.
+
+Коммиты только от моего имени, без строк Co-Authored-By.
+
+Отчёт: вывод проверки, совпали ли четыре пункта, хеш коммита в main, ссылка на коммит карточки на хабе.
+```
+
+
+## 2026-11-08. Prepare the repository for submission to PeerJ Computer Science
+
+*The task this file is part of.*
+
+Original:
+
+```text
+# Задача для Claude Code: репозиторий ru-jev к подаче в PeerJ Computer Science
+
+Репозиторий github.com/beskvladimir-create/ru-jev. Работай в ветке `peerj`, в `main` влей только после моего подтверждения.
+
+Коммиты только от моего имени. Никаких строк Co-Authored-By и других соавторов.
+
+Это требования проверки редакции PeerJ. По трём моим прошлым статьям они возвращали подачу именно за эти пункты, поэтому каждый пункт обязателен.
+
+## 1. Английский язык во всех файлах данных и документации
+
+1. Переименуй файлы с кириллицей в именах:
+   - `results/vocab2/НАЙДЕНО.md`, `results/vocab3/НАЙДЕНО.md`, `results/unseen/НАЙДЕНО.md`, `results/seeds/НАЙДЕНО.md` → `FINDINGS.md`;
+   - `results/fix18/АУДИТ.md` → `AUDIT.md`.
+   
+   Обнови все ссылки на них в репозитории. В `results/seeds/НАЙДЕНО.md` есть ссылка на несуществующий `НАЙДЕНО.ошибочный.md`: убери её или укажи, что этот файл не публиковался.
+2. Переведи на английский все `.md` в `results/`: `results/README.md`, `results/analysis/README.md`, `results/vocab3/README.md`, все `FINDINGS.md`, `AUDIT.md`, а также заголовки таблиц в `table.md`, `calib.md`, `comparable.md`.
+   - Сохрани смысл и все цифры.
+   - Рабочие обращения к пользователю («вы разрешили», «карточку не трогал», «в скретчпаде») перепиши нейтрально, как запись о том, что было сделано.
+   - В `results/vocab3/README.md` правило прочтения и хеши должны остаться дословно. Рядом оставь русский оригинал правила отдельным блоком с пометкой «original, as recorded», потому что статья ссылается на время его записи.
+3. Переведи на английский комментарии в `configs/v1_3.yaml` и в `configs/seed_*.yaml`.
+4. Сделай английским вывод `scripts/robustness.py`: сейчас он печатает русские заголовки таблиц.
+5. Кириллица в строковых данных (тексты вопросов, метки, ключи JSON вроде «метки», «совпадения», значения «рубрики новостей», «жаргон») остаётся, это предмет исследования. Её объясняет справочник из пункта 2 следующего раздела.
+
+## 2. README и справочник к данным
+
+1. `README.md` должен содержать разделы с такими заголовками, по списку PeerJ для статей типа AI Application:
+   - Title;
+   - Description;
+   - Dataset information;
+   - Code information;
+   - Usage instructions;
+   - Requirements;
+   - Methodology;
+   - Citations;
+   - License and contribution guidelines.
+   
+   Подробности:
+   - **Title:** заголовок «Ru-Jev (Ружев)» сделай английским, «Ru-Jev».
+   - **Dataset information:** все 8 обучающих источников и 2 датасета, на которых модель не обучалась. Сейчас в «Training data» 4 из 8. Сверь с `DATASETS.md`.
+   - **Code information:** все скрипты с одной строкой назначения, включая `build_comparable.py`, `fit_and_enrich.py`, `calib.py`, `unseen_bias.py`, `fit_temperature.py`.
+   - **Requirements:** ссылка на `requirements.txt` и `ENVIRONMENT.md`. Сейчас `requirements.txt` задаёт `datasets>=2.20,<5`, а `ENVIRONMENT.md` фиксирует datasets 5.1.0 для замеров. Устрани противоречие.
+   - **Methodology:** кроме модели, ещё и оценка: стенд формулировок на 5 и 18 вариантов, пробы, проверка пересечений (точное совпадение и префикс), точный тест Макнемара, поправка Холма по 23 ячейкам, двухэтапный бутстрэп по меткам и вопросам, смещения по вариантам.
+   - **Contribution guidelines:** хотя бы строка про issues и pull requests.
+   - **Устаревшие места:** пример `run_pipeline` помечен как v1.1 и пишет в `out/ru-jev-v1`, таблица про пороги дана для v1.1, а в статье для v1.3. Приведи к v1.3 или явно подпиши, к какой версии что относится.
+2. Добавь `CODEBOOK.md` на английском:
+   - каждый файл в `results/` и каждое его поле;
+   - каждое русское категориальное значение с английским эквивалентом: названия словарей, наборов, стилей, срезов, ключи JSON;
+   - все 18 меток каждого словаря рядом с английским ключом сценария MASSIVE;
+   - тексты вопросов на русском и почему их не переводят.
+
+## 3. Расхождения со статьёй
+
+1. В `results/validation/split_overlap.md` стоит «the paper reports 89.8% … 21.7%». Статья теперь даёт значения из скрипта, 89.4% и 21.6%. Исправь.
+2. В `results/seeds/README.md` стоит «five to six times». В статье «four to six»: 0.222/0.036 = 6.2 на всех метках и 0.214/0.046 = 4.7 на чистом срезе. Исправь README на «four to six».
+3. Найди в логах обучения и в файлах источник и положи в `results/` с указанием происхождения:
+   - потери и точность на валидации по эпохам v1.3: 0.5054, 0.4576, 0.4831, 0.8204 и 0.7536, 0.7920, 0.8139. В репозитории сейчас документированы только 0.8181 и потери на обучении;
+   - цифры третьей ошибки из статьи: 0.7948 против 0.7920 на 5,078 решениях и калибровка 0.0172 против 0.0160 на одном разбиении.
+   
+   Если источника нет, так и напиши, и я уберу эти цифры из статьи.
+
+## 4. Файл с заданиями для ИИ (обязателен для PeerJ)
+
+Собери `supplement/ai_task_descriptions.md`: фактические задания, которые давались Claude Code по этому проекту, в хронологическом порядке, из истории сессий Claude Code по ru-jev.
+
+- **Что включать:** только задания про код, данные, обучение, оценку, пробы, словари, анализ и калибровку. Задания про тексты статей, постов и карточек не включай.
+- **Формат:** у каждого задания дата, исходный текст на русском и английский перевод. Где задание задавало правило генерации словаря проб с кодами и аббревиатурами, укажи это явно.
+- **Вступление:** короткое, на английском. В нём сказано, что весь код написан агентом по этим заданиям, поэтому версии кода до участия ИИ нет.
+- **Задания для отдельной сессии Claude**, которая писала словари сленга и непрозрачных кодов, я пришлю сам. Оставь для них раздел с пометкой «to be added».
+
+## 5. Новый релиз и DOI
+
+Анализа смещений (`unseen_bias.py`, `bias.md`, `fit_temperature.py --biases`) нет в архиве v1.3.0 на Zenodo, на который ссылается статья. После слияния `peerj` в `main`:
+
+1. Поставь тег `v1.3.1`.
+2. Создай GitHub Release с кратким описанием: смещения по вариантам, перевод документации, справочник к данным.
+3. Если интеграция GitHub и Zenodo включена, Zenodo сам выпустит новую версию. Пришли её DOI. Если интеграции нет, скажи, я загружу вручную.
+
+## Отчёт
+
+Пришли:
+- ветку и хеши коммитов;
+- список переименованных и переведённых файлов;
+- найденные источники для цифр из пункта 3.3 или сообщение, что их нет;
+- путь к `supplement/ai_task_descriptions.md` и число заданий в нём;
+- тег и DOI;
+- любые места, где перевод поменял смысл или ты не уверен.
+```
+
+
+---
+
+## Tasks for the separate session that wrote the slang and opaque-code vocabularies
+
+*To be added.*
+
+The vocabulary of the independent probe, 18 labels in a slang style and 18 in an
+opaque three-letter code style, was supplied to this project verbatim in the task
+of 2026-11-05 above. It was produced in a separate Claude session, whose task
+descriptions are not in this project's history. The author will add them here.

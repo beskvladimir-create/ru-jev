@@ -1,9 +1,17 @@
-# Сводный анализ для препринта
+# Summary analysis for the preprint
 
-`final.py` считает все ячейки таблицы 2 препринта (обе постановки, 5 и 18 вариантов), точный тест Макнемара, поправку Холма на 23 ячейки, интервал бутстрэпа по меткам и уверенные ошибки на 1000. Пятивариантные значения для словарей vocab3 и fix18 получаются из восемнадцативариантных логитов перенормировкой тех же пяти вариантов, что в основном стенде. Для Ру-Жев это точно, потому что каждый вариант оценивается отдельно. Для Laya так делать нельзя, её пятивариантная колонка в выводе не используется.
+`final.py` computes every cell of Table 2 of the preprint, in both settings, 5
+candidates and 18, together with the exact McNemar test, the Holm correction
+over 23 cells, the label-level bootstrap interval and the count of confident
+errors per 1,000 decisions. The five-candidate values for the vocab3 and fix18
+vocabularies are obtained from the eighteen-candidate logits by renormalising
+over the same five options the main bench uses. For Ru-Jev this is exact,
+because each option is scored on its own. For Laya it is not valid, and its
+five-candidate column is not used in the output.
 
-Запуск из корня `articles`:
+Run from the root of this repository:
 
     python3 -I results/analysis/final.py results > results/analysis/final.txt
 
-Сид бутстрэпа 20261105. `analyze.py` и `fiveway.py` это промежуточные версии, оставлены для воспроизводимости истории.
+The bootstrap seed is 20261105. `analyze.py` and `fiveway.py` are intermediate
+versions, kept so that the history of the figures can be reproduced.
