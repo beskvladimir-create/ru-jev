@@ -1,75 +1,75 @@
 
-## стиль_A
+## style A
 
-### все 18: 18 меток, 1000 вопросов
+### all 18: 18 labels, 1000 questions
 
-| модель | точность | средняя уверенность | зазор | уверенно неверно из 1000 |
+| Model | Accuracy | Mean confidence | Gap | Confident errors per 1000 |
 |---|---|---|---|---|
 | ru-jev-v1.1 | 0.104 | 0.361 | +0.257 | 60 |
 | ru-jev-v1.3 | 0.146 | 0.411 | +0.265 | 39 |
 | laya instr A | 0.087 | 0.444 | +0.357 | 83 |
 
-Макнемар, v1.3 против v1.1: разница +0.042, только v1.1 верно 35, только v1.3 верно 77, расхождений 112, p = 8.98e-05
+McNemar, v1.3 against v1.1: difference +0.042, only v1.1 correct 35, only v1.3 correct 77, disagreements 112, p = 8.98e-05
 
-### чистые по точному совпадению: 17 меток, 865 вопросов
+### clean by exact match: 17 labels, 865 questions
 
-| модель | точность | средняя уверенность | зазор | уверенно неверно из 1000 |
+| Model | Accuracy | Mean confidence | Gap | Confident errors per 1000 |
 |---|---|---|---|---|
 | ru-jev-v1.1 | 0.120 | 0.364 | +0.244 | 60 |
 | ru-jev-v1.3 | 0.169 | 0.412 | +0.243 | 43 |
 | laya instr A | 0.097 | 0.445 | +0.348 | 81 |
 
-Макнемар, v1.3 против v1.1: разница +0.049, только v1.1 верно 35, только v1.3 верно 77, расхождений 112, p = 8.98e-05
+McNemar, v1.3 against v1.1: difference +0.049, only v1.1 correct 35, only v1.3 correct 77, disagreements 112, p = 8.98e-05
 
-### строгие, чистые по обоим критериям: 9 меток, 512 вопросов
+### strict, clean by both criteria: 9 labels, 512 questions
 
-| модель | точность | средняя уверенность | зазор | уверенно неверно из 1000 |
+| Model | Accuracy | Mean confidence | Gap | Confident errors per 1000 |
 |---|---|---|---|---|
 | ru-jev-v1.1 | 0.018 | 0.353 | +0.335 | 84 |
 | ru-jev-v1.3 | 0.061 | 0.327 | +0.266 | 31 |
 | laya instr A | 0.088 | 0.429 | +0.341 | 88 |
 
-Макнемар, v1.3 против v1.1: разница +0.043, только v1.1 верно 6, только v1.3 верно 28, расхождений 34, p = 0.0001951
+McNemar, v1.3 against v1.1: difference +0.043, only v1.1 correct 6, only v1.3 correct 28, disagreements 34, p = 0.0001951
 
-Вариантов в вопросе 18, случайное угадывание 0.056.
+Candidates per question 18, chance 0.056.
 
-## стиль_B
+## style B
 
-### все 18: 18 меток, 1000 вопросов
+### all 18: 18 labels, 1000 questions
 
-| модель | точность | средняя уверенность | зазор | уверенно неверно из 1000 |
+| Model | Accuracy | Mean confidence | Gap | Confident errors per 1000 |
 |---|---|---|---|---|
 | ru-jev-v1.1 | 0.428 | 0.652 | +0.224 | 130 |
 | ru-jev-v1.3 | 0.476 | 0.683 | +0.207 | 154 |
 | laya instr A | 0.229 | 0.590 | +0.361 | 181 |
 
-Макнемар, v1.3 против v1.1: разница +0.048, только v1.1 верно 141, только v1.3 верно 189, расхождений 330, p = 0.009569
+McNemar, v1.3 against v1.1: difference +0.048, only v1.1 correct 141, only v1.3 correct 189, disagreements 330, p = 0.009569
 
-### чистые по точному совпадению: 18 меток, 1000 вопросов
+### clean by exact match: 18 labels, 1000 questions
 
-| модель | точность | средняя уверенность | зазор | уверенно неверно из 1000 |
+| Model | Accuracy | Mean confidence | Gap | Confident errors per 1000 |
 |---|---|---|---|---|
 | ru-jev-v1.1 | 0.428 | 0.652 | +0.224 | 130 |
 | ru-jev-v1.3 | 0.476 | 0.683 | +0.207 | 154 |
 | laya instr A | 0.229 | 0.590 | +0.361 | 181 |
 
-Макнемар, v1.3 против v1.1: разница +0.048, только v1.1 верно 141, только v1.3 верно 189, расхождений 330, p = 0.009569
+McNemar, v1.3 against v1.1: difference +0.048, only v1.1 correct 141, only v1.3 correct 189, disagreements 330, p = 0.009569
 
-### строгие, чистые по обоим критериям: 14 меток, 773 вопросов
+### strict, clean by both criteria: 14 labels, 773 questions
 
-| модель | точность | средняя уверенность | зазор | уверенно неверно из 1000 |
+| Model | Accuracy | Mean confidence | Gap | Confident errors per 1000 |
 |---|---|---|---|---|
 | ru-jev-v1.1 | 0.369 | 0.624 | +0.255 | 151 |
 | ru-jev-v1.3 | 0.419 | 0.694 | +0.275 | 191 |
 | laya instr A | 0.171 | 0.588 | +0.417 | 203 |
 
-Макнемар, v1.3 против v1.1: разница +0.050, только v1.1 верно 106, только v1.3 верно 145, расхождений 251, p = 0.01629
+McNemar, v1.3 against v1.1: difference +0.050, only v1.1 correct 106, only v1.3 correct 145, disagreements 251, p = 0.01629
 
-Вариантов в вопросе 18, случайное угадывание 0.056.
+Candidates per question 18, chance 0.056.
 
-### стиль_A: доля верных по метке
+### style A: accuracy per label
 
-| метка | написание | n | v1.1 | v1.3 | laya | v1.3 минус v1.1 |
+| Label | surface form | n | v1.1 | v1.3 | laya | v1.3 minus v1.1 |
 |---|---|---|---|---|---|---|
 | music | МУЗ | 20 | 0.150 | 0.000 | 0.100 | -0.150 |
 | cooking | КУХ | 22 | 0.864 | 0.727 | 0.591 | -0.136 |
@@ -78,7 +78,7 @@
 | email | ЭП | 86 | 0.035 | 0.012 | 0.093 | -0.023 |
 | alarm | БДК | 31 | 0.000 | 0.000 | 0.032 | +0.000 |
 | audio | ГРМ | 22 | 0.000 | 0.000 | 0.318 | +0.000 |
-| play (точное совпадение) | МЕД | 135 | 0.000 | 0.000 | 0.022 | +0.000 |
+| play (exact match in training) | МЕД | 135 | 0.000 | 0.000 | 0.022 | +0.000 |
 | weather | ПГД | 57 | 0.000 | 0.000 | 0.035 | +0.000 |
 | calendar | КЛН | 127 | 0.008 | 0.047 | 0.110 | +0.039 |
 | transport | ТР | 47 | 0.043 | 0.106 | 0.000 | +0.064 |
@@ -90,11 +90,11 @@
 | news | НОВ | 39 | 0.359 | 0.692 | 0.103 | +0.333 |
 | social | СОЦ | 33 | 0.303 | 0.667 | 0.273 | +0.364 |
 
-Куда уходят ошибки v1.3: news 119, qa 93, general 90, recommendation 65, datetime 64, weather 61
+Where v1.3's errors go: news 119, qa 93, general 90, recommendation 65, datetime 64, weather 61
 
-### стиль_B: доля верных по метке
+### style B: accuracy per label
 
-| метка | написание | n | v1.1 | v1.3 | laya | v1.3 минус v1.1 |
+| Label | surface form | n | v1.1 | v1.3 | laya | v1.3 minus v1.1 |
 |---|---|---|---|---|---|---|
 | lists | перечни | 58 | 0.534 | 0.086 | 0.052 | -0.448 |
 | news | сводка | 39 | 0.846 | 0.436 | 0.103 | -0.410 |
@@ -115,4 +115,4 @@
 | weather | синоптик | 57 | 0.140 | 0.649 | 0.193 | +0.509 |
 | qa | справочное бюро | 106 | 0.000 | 0.585 | 0.113 | +0.585 |
 
-Куда уходят ошибки v1.3: lists 116, email 89, news 41, calendar 38, weather 37, transport 28
+Where v1.3's errors go: lists 116, email 89, news 41, calendar 38, weather 37, transport 28

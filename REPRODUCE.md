@@ -226,7 +226,7 @@ Limitations section; three were trained on a stale mixture and are not seeds of
 v1.3. `results/seeds/README.md` has the per-vocabulary table and says which is
 which. Their validation scores are not included, 35 MB of a mixture no release
 was built from; the mistake that made the experiment void is written up in
-`results/seeds/НАЙДЕНО.md` (in Russian).
+`results/seeds/FINDINGS.md`.
 
 ## Split stability of a rebuilt mixture
 

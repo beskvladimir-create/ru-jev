@@ -1,8 +1,9 @@
-# Сид-прогон 3 рецепта v1.1 (без формулировок, baseline). Данные это сохранённая
-# сборка v1.1, пересобрать её нечем: у сборщика нет флага отключения формулировок,
-# старый сборщик остался в коммите 8724054. На шести задачах SuperGLUE эти строки
-# совпадают с текущей сборкой на 100 процентов и по текстам, и по вариантам.
-# ВАЖНО при подаче: это переобученный baseline, а НЕ выложенная v1.1.
+# Seed run 3 of the v1.1 recipe, the baseline without the label wordings. The
+# data are the saved v1.1 build; there is nothing to rebuild it with, because the
+# builder has no flag that turns the wordings off and the old builder stayed in
+# commit 8724054. On the six SuperGLUE tasks these rows match the current build
+# 100 percent, both in the texts and in the options.
+# IMPORTANT when reporting: this is a retrained baseline, NOT the published v1.1.
 base_model: jhu-clsp/mmBERT-base
 out_dir: out/seed-base-s3
 data_dir: ../model/data-v1.1

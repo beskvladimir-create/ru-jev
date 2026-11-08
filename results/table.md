@@ -1,6 +1,6 @@
-## Стенд формулировок, одни и те же 1000 вопросов и 18 категорий на каждую строку
+## Wording bench: the same 1,000 questions, 18 categories, five candidates per question
 
-| словарь | ru-jev-v1.1 | ru-jev-v1.3 | laya instr A | laya instr B |
+| Vocabulary | ru-jev-v1.1 | ru-jev-v1.3 | laya instr A | laya instr B |
 |---|---|---|---|---|
 | русское слово | 0.956 | 0.960 | 0.696 | 0.681 |
 | английский ключ | 0.957 | 0.962 | 0.655 | 0.649 |
@@ -9,20 +9,20 @@
 | названия служб | 0.835 | 0.869 | 0.557 | 0.552 |
 | жаргон | 0.633 | 0.855 | 0.394 | 0.419 |
 
-### Жаргон подробно
+### Anglicism jargon in detail
 
-| модель | 18 категорий | 15 чистых | средняя уверенность | зазор уверенность минус точность | уверенно неверно из 1000 |
+| Model | 18 labels | 15 clean | Mean confidence | Confidence minus accuracy | Confident errors per 1000 |
 |---|---|---|---|---|---|
 | ru-jev-v1.1 | 0.633 | 0.624 | 0.754 | +0.121 | 85 |
 | ru-jev-v1.3 | 0.855 | 0.838 | 0.885 | +0.030 | 44 |
 | laya instr A | 0.394 | 0.422 | 0.630 | +0.236 | 110 |
 | laya instr B | 0.419 | 0.449 | 0.650 | +0.231 | 125 |
 
-### Калибровка на всех 6000 строках стенда
+### Calibration on all 6,000 bench rows
 
-| модель | ECE как есть | подобранная T | ECE после своей T |
+| Model | ECE as is | Fitted T | ECE after its own T |
 |---|---|---|---|
 | ru-jev-v1.1 | 0.0867 | 3.009 | 0.0171 |
 | ru-jev-v1.3 | 0.0473 | 2.474 | 0.0103 |
 | laya instr A | 0.0950 | 1.515 | 0.0268 |
-| laya instr B | 0.1061 | 1.569 | 0.0269 | (из подгонки исключено строк: 2)
+| laya instr B | 0.1061 | 1.569 | 0.0269 | (rows left out of the fit: 2)

@@ -64,12 +64,11 @@ training rows ended up inside the next build's validation split.
 | rucola | 1344 | 9.7% | 90.3% | 0.0% |
 | all | 26746 | 64.8% | 13.5% | 21.7% |
 
-The paper reports 90.3% for acceptability, 89.8% for reasoning, 47.2% for review
-rating and 21.7% for toxicity. Acceptability (`rucola`) and review rating
-(`georeview`) match to the decimal. Reasoning (`mera_qa`) gives 89.4% here and
-toxicity 21.6%, 0.4 and 0.1 away from the figures in the paper, which were
-computed before this script existed and matched rows by a slightly different
-identity. The numbers above are the ones this script produces.
+The paper reports 90.3% for acceptability, 89.4% for reasoning, 47.2% for review
+rating and 21.6% for toxicity, which are the figures this script produces, to
+the decimal. An earlier draft of the paper carried 89.8% and 21.6% for the last
+two, computed before this script existed and matching rows by a slightly
+different identity; those were replaced with the figures above.
 
 Note what the leak did to a reported figure: v1.1's accuracy on acceptability
 read 0.909 on those rows and 0.650 on genuinely held-out ones.
