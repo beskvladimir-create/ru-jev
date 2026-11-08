@@ -106,8 +106,14 @@ than held-out wordings.
         --out /tmp/unseen_laya.jsonl --instr-id A \
         --instr "К какой категории относится запрос пользователя?"
     python scripts/unseen_table.py \
-        "ru-jev-v1.1=results/unseen/unseen_v11.jsonl" \
-        "ru-jev-v1.3=results/unseen/unseen_v13.jsonl"
+        "v1.1=results/unseen/unseen_v11.jsonl" \
+        "v1.3=results/unseen/unseen_v13.jsonl"
+
+The tags matter here. `unseen_table.py` looks each model's released temperature
+up by its tag, so `v1.1=` and `v1.3=` give the mean confidence after the
+released temperature, which is what `results/unseen/table.md` reports. Any other
+tag falls through to a temperature of 1 and the confidence column comes out raw,
+0.855 instead of 0.680 for v1.1. Accuracy and ECE are unaffected.
 
 ### Identical rows for both releases (Table 4)
 
