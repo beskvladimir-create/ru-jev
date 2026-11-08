@@ -79,11 +79,11 @@ the same number, so the highest score stays the highest and accuracy is the same
 at any temperature. If on your own data the model leans towards one of your
 labels whatever the input says, that is not something a temperature can repair.
 Fit one additive bias per option instead, with
-`scripts/fit_temperature.py --biases` on the same labelled rows: the answer
+`scripts/fit_temperature.py --biases` on the same labelled rows. The answer
 becomes `softmax(s / T + b[option])`, the biases are written into the same
 `calibration.json`, and the serving API and `scripts/eval.py` apply them from
-there. On the news-rubric set no model trained on, this lifts v1.3 from 0.568 to
-0.640, because the release leans towards `политика`;
+there. On the news rubrics that no release trained on, this lifts v1.3 from
+0.568 to 0.640, because the release leans towards `политика`.
 `results/unseen/bias.md` has the figures and
 `results/analysis/unseen_bias.py` reproduces them. The biases belong to the
 label set they were fitted on and do not carry over to a different one.
