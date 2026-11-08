@@ -6,13 +6,17 @@ Exposes POST /v1/systemone accepting {model, state, questions} and returning
 decision API moves over by changing the base URL. Decisions are computed locally
 on CPU by the Ru-Jev scoring model, so the text never leaves the host.
 
+The temperature and, if the calibration carries them, the per-option biases are
+read from calibration.json next to the weights and applied to every answer. A
+bias file written by scripts/fit_temperature.py --biases drops in here unchanged.
+
 Run: uvicorn serve.app:app --host 0.0.0.0 --port 8080
 Weights via RU_JEV_MODEL, which takes a local directory or a Hub repo id. With
 it unset the service prefers a fresh training output, then released weights
 sitting next to this repository, and otherwise downloads besktech/ru-jev from
 the Hub, so a clone of this repository alone is enough to start.
 """
-import os, json
+import os, json, sys
 from typing import Any, Dict, List
 import torch
 import torch.nn as nn
@@ -21,6 +25,13 @@ from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModel
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# The calibration is read and applied by the same module the fitting scripts
+# use, so a calibration.json written by scripts/fit_temperature.py means here
+# exactly what it means there. calib.py needs nothing outside the standard
+# library, so this adds no dependency to the service.
+sys.path.append(os.path.join(HERE, "..", "scripts"))
+from calib import load_calibration, apply_calibration      # noqa: E402
+
 HUB_REPO = "besktech/ru-jev"
 # Prefer a fresh training output, then released weights sitting next to this
 # repository. Those paths exist on the author's machine and not in a clone, so
@@ -56,18 +67,23 @@ _tok = None
 _model = None
 _T = 1.0
 _MAX_LEN = 256
+# One additive bias per option, by the option string as the caller writes it.
+# Empty unless the calibration carries them. Unlike the temperature, these do
+# change which option comes out.
+_BIASES: Dict[str, float] = {}
 
 
 def _load():
-    global _tok, _model, _T, _MAX_LEN, MODEL_DIR
+    global _tok, _model, _T, _MAX_LEN, _BIASES, MODEL_DIR
     if _model is not None:
         return
     if MODEL_DIR is None:
         from huggingface_hub import snapshot_download
         MODEL_DIR = snapshot_download(MODEL_SOURCE)
-    calib = json.load(open(os.path.join(MODEL_DIR, "calibration.json")))
-    _T = float(calib.get("temperature", 1.0))
-    _MAX_LEN = int(calib.get("max_len", 256))
+    cal = load_calibration(MODEL_DIR)
+    _T = cal["temperature"]
+    _MAX_LEN = cal["max_len"]
+    _BIASES = cal["biases"]
     _tok = AutoTokenizer.from_pretrained(MODEL_DIR)
     _model = Scorer(MODEL_DIR).to(DEVICE).eval()
 
@@ -92,8 +108,7 @@ def _distribution(context: str, options: List[str]) -> List[float]:
                truncation=True, max_length=_MAX_LEN, padding=True,
                return_tensors="pt").to(DEVICE)
     scores = _model(enc["input_ids"], enc["attention_mask"])
-    probs = torch.softmax(scores / max(_T, 1e-2), dim=0)
-    return probs.detach().cpu().tolist()
+    return apply_calibration(scores.detach().cpu().tolist(), options, _T, _BIASES)
 
 
 class DecideRequest(BaseModel):
@@ -110,7 +125,7 @@ class DecideRequest(BaseModel):
 def health():
     _load()
     return {"status": "ok", "model": MODEL_SOURCE, "path": MODEL_DIR, "device": DEVICE,
-            "max_len": _MAX_LEN, "temperature": _T}
+            "max_len": _MAX_LEN, "temperature": _T, "biases": _BIASES}
 
 
 @app.post("/v1/systemone")

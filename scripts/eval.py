@@ -3,8 +3,12 @@
 
 Usage: python scripts/eval.py --model out/ru-jev-v1
 """
-import json, os, argparse, math
+import json, os, argparse, math, sys
 from collections import defaultdict
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import calib as calibration
+
 import torch
 import torch.nn as nn
 from transformers import AutoTokenizer, AutoModel
@@ -45,8 +49,8 @@ def main():
     args = ap.parse_args()
 
     device = pick_device()
-    calib = json.load(open(os.path.join(args.model, "calibration.json")))
-    T = calib.get("temperature", 1.0)
+    cal = calibration.load_calibration(args.model)
+    T, biases = cal["temperature"], cal["biases"]
     tok = AutoTokenizer.from_pretrained(args.model)
     model = Scorer(args.model).to(device).eval()
     rows = load_jsonl(args.data)
@@ -58,14 +62,15 @@ def main():
         for r in rows:
             opts = [str(o) for o in r["options"]]
             enc = tok([r["input"]] * len(opts), opts, truncation=True,
-                      max_length=calib["max_len"], padding=True, return_tensors="pt").to(device)
+                      max_length=cal["max_len"], padding=True, return_tensors="pt").to(device)
             scores = model(enc["input_ids"], enc["attention_mask"])
-            probs = torch.softmax(scores / max(T, 1e-2), dim=0)
-            pred = int(torch.argmax(probs).item())
+            probs = calibration.apply_calibration(
+                scores.detach().cpu().tolist(), opts, T, biases)
+            pred = max(range(len(probs)), key=lambda k: probs[k])
             correct = int(pred == r["answer"])
             per_task[r["task"]][0] += correct
             per_task[r["task"]][1] += 1
-            conf = float(probs.max().item())
+            conf = float(max(probs))
             b = min(9, int(conf * 10))
             conf_bins[b][0] += conf; conf_bins[b][1] += correct; conf_bins[b][2] += 1
 

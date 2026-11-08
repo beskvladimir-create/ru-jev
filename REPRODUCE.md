@@ -177,6 +177,36 @@ lands 0.005 away.
 Needed if you invent your own label vocabulary: the paper shows the released
 temperature does not carry to unfamiliar wording or to a new domain.
 
+### One bias per option
+
+    python scripts/fit_temperature.py --model besktech/ru-jev \
+        --rows your_decisions.jsonl --out your_calibration.json --biases
+
+A temperature cannot change which option comes out, so it cannot repair a model
+that leans towards one of your labels whatever the input says. This fits one
+additive bias per option together with the temperature, by maximum likelihood on
+the same labelled rows, and writes both into the calibration file. The answer
+then becomes `softmax(s / T + b[option])`. `serve/app.py` and `scripts/eval.py`
+read the biases from that file and apply them. `--no-temperature` holds the
+temperature at 1 and fits the biases alone. The script reports the accuracy out
+of fold, because unlike a temperature these can be fitted to noise.
+
+    python3 -I scripts/test_calibration.py
+
+Checks the fit on scores built with a known lean, and checks that with the
+biases switched off it agrees with the grid search every published temperature
+came out of. No weights and no network.
+
+### Biases on the two unseen datasets
+
+    python3 -I results/analysis/unseen_bias.py results/unseen
+
+Writes the table that `results/unseen/bias.md` holds: accuracy of both releases
+on the news rubrics and on CEDR emotions, as published and after biases fitted
+out of fold, with the paired difference and bootstrap intervals over rows and
+over labels. Splits are seeded 0 to 24, the bootstrap seed is 20261105 with
+5,000 draws. Standard library only, no network.
+
 ## Calibration splits
 
 `scripts/calib.py` holds the half-split machinery used everywhere, with the seed

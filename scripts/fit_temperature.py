@@ -16,11 +16,24 @@ Input format, one JSON object per decision:
   {"input": "user request text", "options": ["candidate", ...], "answer": 0}
 A "text" field is accepted instead of "input".
 
+Per-option biases. The temperature cannot change which option is picked, so it
+cannot repair a model that leans towards one of your labels whatever the input
+says. One additive bias per option can: with --biases the script fits
+softmax(s / T + b[option]) by maximum likelihood, temperature and biases
+together, and writes the biases into the same calibration.json. They are a
+correction of your label set, fitted on your rows, and they do not transfer to
+a different set of labels. Without the flag nothing changes.
+
 Example:
   python scripts/fit_temperature.py --model besktech/ru-jev \
       --rows my_decisions.jsonl --out my_calibration.json
+  python scripts/fit_temperature.py --model besktech/ru-jev \
+      --rows my_decisions.jsonl --out my_calibration.json --biases
 """
-import argparse, json, math, os, random, statistics
+import argparse, json, math, os, random, statistics, sys
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import calib
 
 import torch
 import torch.nn as nn
@@ -108,7 +121,13 @@ def main():
     ap.add_argument("--out", help="where to write a calibration.json with the new temperature")
     ap.add_argument("--max-len", type=int, default=None)
     ap.add_argument("--seed", type=int, default=20261105, help="split seed, recorded in the report")
+    ap.add_argument("--biases", action="store_true",
+                    help="also fit one additive bias per option, which does move the answer")
+    ap.add_argument("--no-temperature", action="store_true",
+                    help="with --biases, hold the temperature at 1 and fit the biases alone")
     a = ap.parse_args()
+    if a.no_temperature and not a.biases:
+        raise SystemExit("--no-temperature only means something together with --biases")
 
     max_len = a.max_len
     if max_len is None:
@@ -137,38 +156,94 @@ def main():
             enc = tok([text] * len(opts), opts, truncation=True,
                       max_length=max_len, padding=True, return_tensors="pt")
             lg = model(enc["input_ids"], enc["attention_mask"]).float().tolist()
-            scored.append((lg, int(r["answer"])))
+            scored.append((lg, opts, int(r["answer"])))
             if (i + 1) % 200 == 0:
                 print(f"  scored {i+1}/{len(rows)}", flush=True)
 
-    acc = sum(lg.index(max(lg)) == ans for lg, ans in scored) / len(scored)
-    T_all = fit(scored)
+    pairs = [(lg, ans) for lg, _opts, ans in scored]
+    acc = sum(lg.index(max(lg)) == ans for lg, ans in pairs) / len(pairs)
+    T_all = fit(pairs)
 
-    idx = list(range(len(scored)))
+    idx = list(range(len(pairs)))
     ts, es = [], []
     for s in range(SPLITS):
         order = list(idx)
         random.Random(a.seed + s).shuffle(order)
         h = len(order) // 2
-        T = fit([scored[i] for i in order[:h]])
+        T = fit([pairs[i] for i in order[:h]])
         ts.append(T)
-        es.append(ece([scored[i] for i in order[h:]], T))
+        es.append(ece([pairs[i] for i in order[h:]], T))
 
     print(f"\nrows {len(scored)}, accuracy {acc:.4f} (independent of the temperature)")
     print(f"temperature on all rows: {T_all:.4f}")
     print(f"over {SPLITS} half-splits, seed {a.seed}: "
           f"mean {statistics.mean(ts):.4f}, from {min(ts):.3f} to {max(ts):.3f}")
-    print(f"ECE at temperature 1: {ece(scored, 1.0):.4f}")
+    print(f"ECE at temperature 1: {ece(pairs, 1.0):.4f}")
     print(f"ECE after the fitted one: {statistics.mean(es):.4f}")
     spread = max(ts) - min(ts)
     if spread > 0.5:
         print(f"temperature spread {spread:.2f} is wide: add more rows")
 
+    out = {"temperature": T_all, "max_len": max_len, "calibrated": True,
+           "fitted_on": os.path.basename(a.rows), "n_rows": len(scored),
+           "split_seed": a.seed, "accuracy": round(acc, 4)}
+
+    if a.biases:
+        fitted = calib.fit_calibration(scored, fit_temperature=not a.no_temperature)
+        held = fitted["held_at_zero"]
+        order_b = sorted(fitted["biases"].items(), key=lambda kv: -kv[1])
+
+        # Out of fold, because biases can be fitted to noise in a way a single
+        # temperature cannot. Each half is used once to fit and once to score,
+        # so every row is answered by a fit that never saw it.
+        accs = []
+        for s in range(SPLITS):
+            order = list(idx)
+            random.Random(a.seed + s).shuffle(order)
+            h = len(order) // 2
+            halves = (order[:h], order[h:])
+            for fit_ix, test_ix in (halves, halves[::-1]):
+                f = calib.fit_calibration([scored[i] for i in fit_ix],
+                                          fit_temperature=not a.no_temperature)
+                hit = 0
+                for i in test_ix:
+                    lg, opts, ans = scored[i]
+                    pr = calib.apply_calibration(lg, opts, f["temperature"],
+                                                 f["biases"], warn=False)
+                    hit += int(max(range(len(pr)), key=lambda k: pr[k]) == ans)
+                accs.append(hit / max(len(test_ix), 1))
+        oof = statistics.mean(accs)
+
+        in_sample = 0
+        for lg, opts, ans in scored:
+            pr = calib.apply_calibration(lg, opts, fitted["temperature"],
+                                         fitted["biases"], warn=False)
+            in_sample += int(max(range(len(pr)), key=lambda k: pr[k]) == ans)
+        in_sample /= len(scored)
+
+        print(f"\nwith one bias per option, {len(fitted['options'])} options, "
+              f"{'temperature fitted with them' if not a.no_temperature else 'temperature held at 1'}")
+        print(f"temperature: {fitted['temperature']:.4f}")
+        print(f"accuracy on the rows the biases were fitted on: {in_sample:.4f}")
+        print(f"accuracy out of fold over {SPLITS} half-splits: {oof:.4f} "
+              f"(from {min(accs):.3f} to {max(accs):.3f})")
+        print(f"without biases it is {acc:.4f}")
+        print(f"\nbiases, {held!r} held at zero:")
+        for name, b in order_b:
+            print(f"  {b:+.3f}  {name}")
+        if oof <= acc:
+            print("\nout of fold the biases do not help on these rows. "
+                  "The lean they correct may not be there, or there are too few rows.")
+
+        out["temperature"] = fitted["temperature"]
+        out["biases"] = {k: round(v, 6) for k, v in fitted["biases"].items()}
+        out["options"] = fitted["options"]
+        out["bias_held_at_zero"] = held
+        out["bias_temperature_fitted"] = not a.no_temperature
+        out["accuracy_with_biases"] = round(oof, 4)
+
     if a.out:
-        json.dump({"temperature": T_all, "max_len": max_len, "calibrated": True,
-                   "fitted_on": os.path.basename(a.rows), "n_rows": len(scored),
-                   "split_seed": a.seed, "accuracy": round(acc, 4)},
-                  open(a.out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        json.dump(out, open(a.out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         print(f"\nwritten: {a.out}")
 
 

@@ -74,6 +74,20 @@ compared with the ones above.
 released weights and the validation split and checks it against the 1.8640 in
 `calibration.json`, so the figure can be rechecked rather than taken on trust.
 
+The temperature cannot change which option comes out. It divides every score by
+the same number, so the highest score stays the highest and accuracy is the same
+at any temperature. If on your own data the model leans towards one of your
+labels whatever the input says, that is not something a temperature can repair.
+Fit one additive bias per option instead, with
+`scripts/fit_temperature.py --biases` on the same labelled rows: the answer
+becomes `softmax(s / T + b[option])`, the biases are written into the same
+`calibration.json`, and the serving API and `scripts/eval.py` apply them from
+there. On the news-rubric set no model trained on, this lifts v1.3 from 0.568 to
+0.640, because the release leans towards `политика`;
+`results/unseen/bias.md` has the figures and
+`results/analysis/unseen_bias.py` reproduces them. The biases belong to the
+label set they were fitted on and do not carry over to a different one.
+
 Per task:
 
 | Task | Accuracy | n |
@@ -131,10 +145,12 @@ scripts/aggregate.py   the five-candidate wording bench as the model card report
 scripts/unseen_table.py  the two datasets no model trained on
 scripts/compare_rows.py  per-row comparison of two releases, with weight hashes
 scripts/verify_temperature.py  refits the released temperature and checks it
-scripts/fit_temperature.py     fits a temperature on your own decisions
+scripts/fit_temperature.py     fits a temperature, and with --biases one bias per option
+scripts/test_calibration.py    checks the calibration fit on synthetic scores
 scripts/run_pipeline.sh  build, train, evaluate, probe
 serve/app.py           FastAPI service with a typed-decision endpoint
 results/               per-row scores and tables of every experiment in the paper
+results/analysis/unseen_bias.py  per-option biases on the two unseen datasets
 REPRODUCE.md           which command produces which table
 ENVIRONMENT.md         hardware, package versions, GPU time
 DATASETS.md            sources, licences, pinned revisions and what is excluded
