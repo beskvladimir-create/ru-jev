@@ -269,6 +269,8 @@ at which it was recorded.
 | `unseen_laya_headline.jsonl`, `unseen_laya_cedr.jsonl` | 1,000 each | the comparison model on each dataset |
 | `table.md` | | accuracy, confidence and calibration per dataset |
 | `bias.md` | | what one additive bias per option does, out of fold |
+| `ladder/<checkpoint>.jsonl` | 1,000 each | the raw logits of eleven checkpoints on the news rubrics, same fields as `unseen_v13.jsonl`; the `model` field names the checkpoint |
+| `ladder.md` | | where between v1.1 and v1.3 the economy and politics boundary moves |
 | `FINDINGS.md` | | the write-up, including what cannot be claimed |
 
 ### `results/validation/`, the released validation split
@@ -308,7 +310,13 @@ In `model`, `laya` is the comparison model
 and `B` are its two instructions, which are given in full in
 `results/README.md`.
 
-In `results/fix18/calib_bench.json` the keys are built as
-`<vocabulary or set>|<model>`, so a key like `жаргон|ru-jev-v1.3` is the jargon
-vocabulary as scored by v1.3, not a label.
+Composite keys. Several JSON reports key a figure by more than one thing at
+once, and they do it by joining the parts with a vertical bar, `|`, with no
+spaces: `<vocabulary or set>|<model>`. The left part is a value of `vocab` or of
+`set` as section 2 and section 3 list them, the right part is a value of
+`model`. So `жаргон|ru-jev-v1.3` is the jargon vocabulary as scored by v1.3, and
+`рубрики новостей|ru-jev-v1.1` is the news rubrics as scored by v1.1. Neither is
+a label. `results/fix18/calib_bench.json` and `calib_unseen.json` use this form,
+and `scripts/calib.py` writes it. A key whose left part is `all` means the
+figure was computed over every row rather than one slice.
 

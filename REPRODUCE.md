@@ -203,6 +203,19 @@ Checks the fit on scores built with a known lean, and checks that with the
 biases switched off it agrees with the grid search every published temperature
 came out of. No weights and no network.
 
+### Where the economy and politics boundary moves
+
+    python3 -I results/analysis/unseen_ladder.py results/unseen
+
+Writes the table that `results/unseen/ladder.md` holds: eleven checkpoints
+between v1.1 and v1.3 on the 1,000 news headlines, with the AUC of
+`logit(экономика) - logit(политика)` over the 340 headlines of those two
+rubrics, a paired bootstrap of that AUC against v1.1 (2,000 draws, seed
+20261105), the median margin on each of the two rubrics, and recall for all six.
+It reads the per-checkpoint logits from `results/unseen/ladder/`. The
+intermediate weights are not published, only their scores on these rows.
+Standard library only, no network.
+
 ### Biases on the two unseen datasets
 
     python3 -I results/analysis/unseen_bias.py results/unseen

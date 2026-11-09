@@ -98,6 +98,20 @@ def mean(xs):
     return sum(xs) / len(xs)
 
 
+def recall_by_label(rates, labels):
+    """Recall per label from the pooled out-of-fold answers.
+
+    Every row is answered 25 times by a fit that never saw it, so the rate of a
+    row is its share of correct answers. The recall of a label is the mean of
+    those rates over its rows, which is the same as pooling all the answers of
+    that label and dividing.
+    """
+    by = {}
+    for r, g in zip(rates, labels):
+        by.setdefault(g, []).append(r)
+    return {g: (mean(v), len(v)) for g, v in sorted(by.items())}
+
+
 def ci_rows(diff, seed):
     rng = random.Random(seed)
     n = len(diff)
@@ -171,6 +185,31 @@ def main():
             lo_l, hi_l = ci_labels(diff, labels, BOOT_SEED)
             print("| %s | %+.3f | [%+.3f, %+.3f] | [%+.3f, %+.3f] |"
                   % (label, mean(diff), lo_r, hi_r, lo_l, hi_l))
+
+        print("\nRecall per label, from the same out-of-fold answers as the "
+              "accuracy above:\n")
+        print("| Label | n | %s as published | %s after biases | %s as published | "
+              "%s after biases | after minus after |" % (a, a, b, b))
+        print("|---|---|---|---|---|---|---|")
+        raw_a = recall_by_label(per_model[a]["raw"], labels)
+        raw_b = recall_by_label(per_model[b]["raw"], labels)
+        fix_a = recall_by_label(per_model[a]["bias_T"], labels)
+        fix_b = recall_by_label(per_model[b]["bias_T"], labels)
+        contrib = {}
+        total_n = per_model[a]["n"]
+        for g in sorted(raw_a, key=lambda g: fix_b[g][0] - fix_a[g][0]):
+            n = raw_a[g][1]
+            d = fix_b[g][0] - fix_a[g][0]
+            contrib[g] = d * n / total_n
+            print("| %s | %d | %.3f | %.3f | %.3f | %.3f | %+.3f |"
+                  % (g, n, raw_a[g][0], fix_a[g][0], raw_b[g][0], fix_b[g][0], d))
+        worst = sorted(contrib, key=lambda g: contrib[g])[:2]
+        print("\nThe two labels that cost the most after the biases are %s and %s: "
+              "together %+.3f of the %+.3f paired difference, the other %d labels "
+              "%+.3f." % (worst[0], worst[1],
+                          contrib[worst[0]] + contrib[worst[1]],
+                          sum(contrib.values()), len(contrib) - 2,
+                          sum(v for g, v in contrib.items() if g not in worst)))
 
         print("\nBiases fitted on all %d rows, for reading only, not used for any "
               "accuracy above:\n" % per_model[a]["n"])

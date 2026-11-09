@@ -156,8 +156,9 @@ INTENT_RU = {
 }
 
 # Jargon: the English key written in Cyrillic, and a clipped form of it. That is
-# how labels are written in chat and in tickets, and v1.1 failed on them: 0.608
-# against 0.95 on familiar wordings. The rules were deliberately NOT tuned
+# how labels are written in chat and in tickets, and neither release before this
+# one read them: v1.1 scores 0.633 on jargon and v1.2, which added the phrase
+# wordings, 0.608, against about 0.95 on familiar wordings. The rules were deliberately NOT tuned
 # against the vocabulary in robustness.py; otherwise a gain on jargon would mean
 # nothing but a leaked test. These styles apply to INTENTS ONLY. Scenario jargon
 # stays held out.
