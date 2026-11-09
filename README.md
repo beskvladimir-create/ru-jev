@@ -488,9 +488,16 @@ that produced them are written up in `results/fix18/AUDIT.md`,
 
 The preprint is [arXiv:2611.08439](https://arxiv.org/abs/2611.08439). This
 repository is archived at Zenodo under
-[10.5281/zenodo.23986846](https://doi.org/10.5281/zenodo.23986846), which always
-resolves to the latest version. Cite 10.5281/zenodo.23986847 for the exact
-version the paper was written against, tag `v1.3.0`.
+[10.5281/zenodo.23986846](https://doi.org/10.5281/zenodo.23986846), the concept
+DOI, which always resolves to the latest version.
+
+Which version to cite depends on what for:
+
+| Cite | For |
+|---|---|
+| `10.5281/zenodo.23986847` | the tables of the paper, tag `v1.3.0`, the state every published figure was computed from |
+| `10.5281/zenodo.24073451` | this repository as it stands, tag `v1.3.3`, with the per-option biases, the checkpoint ladder, the English documentation and the codebook |
+| `10.5281/zenodo.23986846` | the latest version, whatever it is at the time of reading |
 
 ```bibtex
 @misc{beskorovainyi2026rujev,
