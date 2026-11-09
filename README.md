@@ -491,7 +491,6 @@ Which version to cite depends on what for:
 | Cite | For |
 |---|---|
 | `10.5281/zenodo.23986847` | the tables of the paper, tag `v1.3.0`, the state every published figure was computed from |
-| `10.5281/zenodo.24073451` | this repository as it stands, tag `v1.3.3`, with the per-option biases, the checkpoint ladder, the English documentation and the codebook |
 | `10.5281/zenodo.23986846` | the latest version, whatever it is at the time of reading |
 
 ```bibtex
