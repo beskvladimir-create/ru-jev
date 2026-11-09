@@ -31,10 +31,6 @@ mmBERT-base backbone is fine-tuned along with it, on open, human-labelled
 datasets only. The name is a play on the category, not a claim of compatibility
 or endorsement.
 
-**On the use of AI.** Every script in this repository was written and run by
-Claude Code, an AI coding agent, to the task descriptions collected in
-`supplement/ai_task_descriptions.md`.
-
 ### Results
 
 v1.3, measured on its own held-out validation split. Two accuracy figures,
@@ -287,7 +283,6 @@ configs/v1_3.yaml      v1.3: released; label wordings varied per example, 4 epoc
 configs/v2.yaml        v2: xlm-roberta-large, 4 epochs (trained, not published)
 configs/seed_*.yaml    the seed replicates of the v1.1 and v1.3 recipes
 results/               per-row scores and tables of every experiment in the paper
-supplement/            the task descriptions the AI coding agent was given
 REPRODUCE.md           which command produces which table
 ENVIRONMENT.md         hardware, package versions, GPU time
 DATASETS.md            sources, licences, pinned revisions and what is excluded
