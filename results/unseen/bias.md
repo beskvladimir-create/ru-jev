@@ -52,6 +52,47 @@ survives a different choice of rubrics, which is the harder question. After the
 biases the news gap is still there over rows and no longer clears zero over
 labels.
 
+## Recall per label after the biases
+
+From the same out-of-fold answers as the accuracy above, so nothing here was
+fitted on the rows it is scored on. The last column is the difference between
+the two releases after both have had their biases fitted, and it is what the
+paired difference is made of.
+
+News rubrics:
+
+| Label | n | v1.1 as published | v1.1 after biases | v1.3 as published | v1.3 after biases | after minus after |
+|---|---|---|---|---|---|---|
+| политика | 166 | 0.771 | 0.703 | 0.771 | 0.617 | -0.086 |
+| экономика | 174 | 0.730 | 0.734 | 0.448 | 0.655 | -0.078 |
+| происшествия | 161 | 0.851 | 0.690 | 0.776 | 0.648 | -0.042 |
+| наука | 158 | 0.437 | 0.592 | 0.430 | 0.570 | -0.022 |
+| культура | 161 | 0.348 | 0.569 | 0.230 | 0.556 | -0.013 |
+| спорт | 180 | 0.750 | 0.738 | 0.733 | 0.775 | +0.038 |
+
+Weighted by their share of the rows, `политика` and `экономика` together
+account for -0.028 of the -0.034 paired difference, and the other four labels
+for -0.006. The biases repair most of the economy collapse, 0.448 up to 0.655,
+and they cost politics, 0.771 down to 0.617, because the correction that stops
+the model answering politics everywhere also takes away the politics it had
+right. What is left after that trade is where the remaining three points sit.
+
+CEDR emotions:
+
+| Label | n | v1.1 as published | v1.1 after biases | v1.3 as published | v1.3 after biases | after minus after |
+|---|---|---|---|---|---|---|
+| злость | 107 | 0.664 | 0.312 | 0.495 | 0.239 | -0.073 |
+| удивление | 148 | 0.588 | 0.378 | 0.716 | 0.327 | -0.051 |
+| страх | 118 | 0.780 | 0.409 | 0.695 | 0.376 | -0.034 |
+| радость | 296 | 0.301 | 0.644 | 0.591 | 0.683 | +0.039 |
+| грусть | 331 | 0.350 | 0.689 | 0.287 | 0.756 | +0.067 |
+
+Here the biases do something cruder. The label set is unbalanced, `грусть` and
+`радость` cover 63 percent of the rows, and a fit on the likelihood moves both
+releases towards them: recall on the three rare emotions falls for both. The
+accuracy rises all the same, which is a reminder that accuracy on an unbalanced
+label set is not the same question as reading each label well.
+
 ## The biases themselves
 
 Fitted on all 1,000 rows of each set. For reading only: none of the accuracy

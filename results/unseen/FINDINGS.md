@@ -49,23 +49,29 @@ be the same for both. The rows of the dataset: sha256
 
 | Model | Accuracy | Mean confidence | Gap | ECE as is | Fitted T | ECE after its own T |
 |---|---|---|---|---|---|---|
-| v1.1 | 0.652 | 0.680 | +0.028 | 0.2037 | 2.754 | 0.0663 |
-| v1.3 | 0.568 | 0.663 | +0.095 | 0.2452 | 2.467 | 0.0568 |
-| laya | 0.610 | 0.852 | +0.242 | 0.2422 | 2.182 | 0.0553 |
+| v1.1 | 0.652 | 0.680 | +0.028 | 0.2037 | 2.759 | 0.0674 |
+| v1.3 | 0.568 | 0.663 | +0.095 | 0.2452 | 2.462 | 0.0599 |
+| laya | 0.610 | 0.852 | +0.242 | 0.2422 | 2.237 | 0.0545 |
 
 ### CEDR emotions, 1,000 rows, 5 candidates, chance 0.200
 
 | Model | Accuracy | Mean confidence | Gap | ECE as is | Fitted T | ECE after its own T |
 |---|---|---|---|---|---|---|
-| v1.1 | 0.455 | 0.540 | +0.085 | 0.2868 | 3.391 | 0.0539 |
-| v1.3 | 0.511 | 0.447 | -0.064 | 0.0815 | 1.547 | 0.0536 |
-| laya | 0.605 | 0.661 | +0.056 | 0.0708 | 1.364 | 0.0805 |
+| v1.1 | 0.455 | 0.540 | +0.085 | 0.2868 | 3.430 | 0.0564 |
+| v1.3 | 0.511 | 0.447 | -0.064 | 0.0815 | 1.546 | 0.0587 |
+| laya | 0.605 | 0.661 | +0.056 | 0.0708 | 1.381 | 0.0766 |
 
 For the gap and the mean confidence each model uses its own temperature: for
 Ru-Jev the released ones, 1.8640 for v1.3 and 2.2754 for v1.1, and for Laya its
 own, since it returns probabilities itself. The ECE and the fitted T are
 averages over 25 random half-splits, fitted on one half and measured on the
 other, which is the method the model card uses.
+
+The fitted temperature and the residual ECE in these two tables were refreshed
+on 2026-11-09 with the current `scripts/unseen_table.py`, which takes its
+half-splits from `calib.py` with the recorded `SPLIT_SEED = 20261105`. Accuracy,
+mean confidence, the gap and the raw ECE did not move. `table.md` in this
+directory lists the old and the new value of every figure that did.
 
 ## What can be said from this and what cannot
 

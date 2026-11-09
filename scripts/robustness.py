@@ -62,6 +62,12 @@ VOCABS = [
 ]
 
 
+# The third element of VOCABS is stored in every dump as "seen_from", so its
+# values are data and stay as they are. Only the printed report renders them in
+# English, through this map.
+SEEN_EN = {"нигде": "in no mixture"}
+
+
 # v1.3 trains on transliterations of intent keys, and an intent key begins with
 # its scenario name, so some of the scenario jargon labels reach training as a
 # first word. For those labels the jargon column measures recall rather than
@@ -181,12 +187,12 @@ def main():
                     ok += 1
                 elif float(p[pick]) > 0.8:
                     overconfident += 1
-        print(f"| {name} | {seen} | {ok}/{len(cases)} = {ok/len(cases):.3f} | "
-              f"{sum(confs)/len(confs):.3f} | {overconfident} |")
+        print(f"| {name} | {SEEN_EN.get(seen, seen)} | {ok}/{len(cases)} = "
+              f"{ok/len(cases):.3f} | {sum(confs)/len(confs):.3f} | {overconfident} |")
         if name == "жаргон":
             cl = [i for i, (_, gold, _) in enumerate(cases) if gold in CLEAN]
             n_cl = sum(hits[i] for i in cl)
-            print(f"| жаргон, clean subset | нигде | {n_cl}/{len(cl)} = "
+            print(f"| жаргон, clean subset | in no mixture | {n_cl}/{len(cl)} = "
                   f"{n_cl/max(len(cl), 1):.3f} | | |")
 
 
