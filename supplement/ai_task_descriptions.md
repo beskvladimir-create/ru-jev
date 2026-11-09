@@ -30,6 +30,12 @@ history of the author's earlier submissions elsewhere, one per-section checklist
 for a file in this repository, and one sentence about what the author would do
 with an answer.
 
+One section at the end of this file is not a quoted task at all. The request to
+the separate Claude conversation that produced the probe vocabulary was not
+preserved, and that section carries a reconstruction written afterwards, marked
+as such in place. It is the only text in this file that was not sent to a
+session.
+
 ## What is included and what is not
 
 Included: tasks about code, data, training, evaluation, probes, label
@@ -857,3 +863,149 @@ returned are given verbatim in the task of 2026-11-05 above, the entry titled
 Claude web interface rather than in Claude Code, so it left no transcript in
 this project's history, and the only record of what it produced is the 36 labels
 as they were pasted into the task and stored in `results/vocab3/vocab.json`.
+
+### A reconstruction, written after the fact
+
+**This is not the original task and must not be read as one.** It was written on
+2026-11-09 by the coding agent, at the author's request, long after the
+vocabulary existed, and it was never sent to the session that produced the
+labels. It is published here for one reason only: so that a reader who wants to
+judge the probe, or to build a comparable one, can see what the requirements on
+such a vocabulary are, stated in full. Every constraint in it is one the
+published probe is checked against in `results/vocab3/` and
+`results/vocab2/FINDINGS.md`; none of it is evidence about how the original
+labels were asked for.
+
+```markdown
+# Task: build a held-out probe vocabulary for a typed-decision model
+
+## Context you need
+
+The model under test is a typed-decision encoder. It is given a context and a
+list of candidate options as strings, scores each (context, option) pair
+independently, and takes a softmax across the options. It therefore reads the
+option text, and the wording of a label is part of the input, not metadata.
+
+The question this probe answers is narrow and you must not widen it: does the
+model still identify the right category when the category is written in a form
+it has never been trained on? The categories stay the same. Only their surface
+form changes.
+
+The category set is the 18 MASSIVE scenario keys:
+
+alarm, audio, calendar, cooking, datetime, email, general, iot, lists, music,
+news, play, qa, recommendation, social, takeaway, transport, weather
+
+The training mixture already contains three ways of writing them: the English
+key itself, one Russian word per scenario, and a short Russian phrase. Those are
+trained styles and are useless as a probe. You are building two styles that are
+not in training and are not reachable from training by the rules training used.
+
+## What to produce
+
+Two vocabularies over the same 18 scenarios, in Russian:
+
+**Style B, slang.** What a person would actually type if they were being
+informal, in a chat or a ticket. Everyday words, not invented ones. A reader who
+knows no taxonomy should still guess roughly what the label means.
+
+**Style A, opaque code.** A short internal code of two to four capital Cyrillic
+letters, of the kind an operations team writes on a form. Opaque is the
+requirement: a reader must not be able to derive the code from the English key.
+This style is the lower bound of the experiment.
+
+## Hard constraints
+
+1. **Fix the vocabulary before anything is scored, and never change it
+   afterwards.** If a label turns out to be unlucky, it stays. Changing a label
+   after seeing a result makes the whole probe worthless and there is no way to
+   repair that later.
+
+2. **Nothing may be an exact match of a training option.** Check every one of
+   the 36 labels against all option strings of both training mixtures, over all
+   thirteen tasks, not just the scenario task. Case-insensitive.
+
+3. **Do not substitute a label that collides. Exclude it.** A collision is a
+   finding, not a defect. Report the clean subset and the full set separately,
+   the way a figure of "15 of 18 clean" is reported. Silently swapping the
+   colliding label hides the overlap and inflates the result.
+
+4. **Report prefix relations in both directions, and do not design around
+   them.** Two kinds matter: a training option that starts with your label
+   (a three-letter code is the start of a trained word), and your label that
+   starts with a training option (a code built from the English key). Both are
+   weaker than an exact match and both must be counted and shown. If you quietly
+   pick labels to avoid them, the reader cannot tell a clean probe from a lucky
+   one.
+
+5. **The codes must not be reproducible by the rules the model trained on.** The
+   training builder derives label variants by transliterating the English key
+   into Cyrillic and by clipping it. Any code that a transliteration or a
+   clipping rule would produce is a leaked test, not a probe. State explicitly,
+   per label, that it is not such an output.
+
+6. **All 36 labels distinct.** No collision within a style, none across styles.
+
+7. **No label may describe the category in words the trained phrase style
+   already uses.** If your slang is a paraphrase of a trained phrase, you are
+   measuring recall.
+
+## What to hand back
+
+1. `vocab.json` in this schema, and nothing else in the file:
+
+   {"стиль_A": {"описание": "<one line>", "метки": {"alarm": "...", ...}},
+    "стиль_B": {"описание": "<one line>", "метки": {"alarm": "...", ...}}}
+
+2. The sha256 of that file, and the timestamp at which it was written, both in
+   your reply. They go into the write-up as evidence of the order of events.
+
+3. A table of all 18 rows: scenario key, style A, style B, one short line on
+   where each slang term and each code comes from, and for style A the Russian
+   word the code is abbreviated from if any.
+
+4. The overlap report: for each label, exact match yes or no against each
+   mixture, prefix relation in each direction, and whether the label is clean by
+   the exact criterion. Name the labels you expect to be excluded from the clean
+   figure and why.
+
+5. The labels you considered and rejected, with the reason. This is the part
+   that lets a reviewer see the vocabulary was not tuned.
+
+## Acceptance
+
+I will reject the vocabulary if any of these is true:
+
+- a label was changed after a result was seen;
+- a collision was repaired by substitution rather than reported;
+- the prefix report is missing, or it is complete but suspiciously empty;
+- a code is the output of transliterating or clipping the English key;
+- the slang is machine-sounding, that is, nobody would type it;
+- the file does not parse, or a key is missing, or two labels coincide.
+
+## What this probe does not test
+
+It does not test unfamiliar categories; the categories are the same eighteen. It
+does not test a different domain. It is one vocabulary per style, built once, so
+a different set of slang could give different numbers, and whatever is reported
+has to say so.
+```
+
+### How the published vocabulary measures against it
+
+The vocabulary that was actually used satisfies constraints 1, 2, 3, 6 and 7 as
+published, and the evidence for each is in the repository: it was fixed in
+`vocab.json` before any score file was opened, the overlap audit against both
+mixtures is in `results/vocab3/overlap.json`, the one label that matches
+training exactly (`МЕД`) is excluded from the clean figure rather than replaced,
+and all 36 labels are distinct. Constraint 4 is satisfied in the reporting: the
+prefix relations are counted in both directions and the strict slices, 9 labels
+of 18 in style A and 14 of 18 in style B, are what is left after them.
+
+Constraint 5 cannot be verified against the original request, because the
+request is lost. It can be verified against the result, and it holds: none of
+the 18 codes is the output of the `jargon_translit` or `jargon_clip` rule in
+`scripts/build_data.py`, which is checked in `results/fix18/AUDIT.md` for the
+jargon vocabulary and holds by inspection for these codes, since they are
+Cyrillic abbreviations of Russian words rather than transliterations of English
+keys.
