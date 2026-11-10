@@ -216,6 +216,28 @@ It reads the per-checkpoint logits from `results/unseen/ladder/`. The
 intermediate weights are not published, only their scores on these rows.
 Standard library only, no network.
 
+### Biases on every checkpoint of the ladder
+
+    python3 -I results/analysis/ladder_bias.py results/unseen
+
+Writes the table that `results/unseen/ladder_bias.md` holds: for each of the two
+unseen datasets and each of the eleven checkpoints, accuracy as published and
+accuracy out of fold once that checkpoint is allowed its own per-option biases,
+followed by six paired differences with bootstrap intervals over rows and over
+labels. It uses the functions of `unseen_bias.py`, so the splits, the seeds and
+the number of draws are the same. Standard library only, no network.
+
+The per-checkpoint logits it reads were produced by
+
+    python results/analysis/score_ladder.py --set "рубрики новостей" \
+        --models ../model --out results/unseen/ladder
+    python results/analysis/score_ladder.py --set "эмоции" \
+        --models ../model --out results/unseen/ladder_emotions
+
+which needs the weights, unlike everything else in `results/analysis/`. It calls
+`scripts/score_rujev.py` once per checkpoint, so the dumps come from the same
+scorer as every other score file in `results/`.
+
 ### Biases on the two unseen datasets
 
     python3 -I results/analysis/unseen_bias.py results/unseen

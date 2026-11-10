@@ -270,7 +270,9 @@ at which it was recorded.
 | `table.md` | | accuracy, confidence and calibration per dataset |
 | `bias.md` | | what one additive bias per option does, out of fold |
 | `ladder/<checkpoint>.jsonl` | 1,000 each | the raw logits of eleven checkpoints on the news rubrics, same fields as `unseen_v13.jsonl`; the `model` field names the checkpoint |
+| `ladder_emotions/<checkpoint>.jsonl` | 1,000 each | the same eleven checkpoints on the CEDR emotions |
 | `ladder.md` | | where between v1.1 and v1.3 the economy and politics boundary moves |
+| `ladder_bias.md` | | each checkpoint once it is allowed its own per-option biases |
 | `FINDINGS.md` | | the write-up, including what cannot be claimed |
 
 ### `results/validation/`, the released validation split
