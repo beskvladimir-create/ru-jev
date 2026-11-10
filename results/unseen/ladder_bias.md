@@ -105,8 +105,8 @@ accuracy.
 **The two rankings disagree on both datasets.** As published the best on news is
 v1.1 at 0.652 and the best on emotions is `seed-base-s2` at 0.545. With biases
 the best on news is `v1.3-ep2of4` at 0.693 and on emotions `v1.2` at 0.591.
-Neither of the released checkpoints is first on either dataset under either
-ranking.
+The released v1.1 is first only on the news rubrics as published; with biases,
+neither released checkpoint is first on either dataset.
 
 **Seed variation is the same size as the difference between releases.** A second
 seed of the v1.1 recipe differs from v1.1 by -0.037 on news and +0.020 on
