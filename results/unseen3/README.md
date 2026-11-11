@@ -29,6 +29,19 @@ Each dataset has to pass the checks below before it is used at all. A dataset
 that fails is not used, and the reason is written here. Failing one does not
 stop the other.
 
+**B was not used.** Its MTEB mirror, `mteb/KinopoiskClassification`, carries
+`license: unknown` in its card metadata, and the rule above treats an unclear
+licence as a failure. Its first source,
+`ai-forever/kinopoisk-sentiment-classification`, is MIT and passes on the
+licence, but it gives the three classes only in English, `Bad`, `Neutral` and
+`Good`, and the rule stops on classes that are given only in English. Both
+failures were found before anything was scored. The natural Russian rendering of
+those classes would be `негативный`, `нейтральный` and `позитивный`, which are
+exactly the option strings the training mixture uses for `RuReviewsClassification`,
+so translating them would have replaced one failure with another: the labels
+would no longer be unseen. The dataset is therefore absent from the results and
+no verdict is given for it.
+
 ## The checks a dataset has to pass
 
 1. **Licence.** Commercial use has to be permitted by the card of the dataset
