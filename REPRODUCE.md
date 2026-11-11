@@ -230,6 +230,26 @@ McNemar test, and the cells where the difference between the releases is no
 larger than that spread. It reads only the per-row score files. Standard library
 only, no network, no weights.
 
+### Do the rankings of the ladder agree across unseen datasets
+
+    python3 -I results/analysis/ladder_rank.py
+
+Writes the table that `results/unseen3/ladder_rank.md` holds: the ten distinct
+checkpoints on every unseen dataset, as published and with per-option biases,
+the Spearman rank correlation between every pair of datasets, the six fixed
+pairs of checkpoints with bootstrap intervals, and the spread between two runs
+of the v1.1 recipe. The rule for reading it is in `results/unseen3/README.md`
+and was committed before any row was downloaded.
+
+The rows of the third dataset are built by
+
+    python3 -I results/analysis/build_unseen3.py --test <test.jsonl> \
+        --set "научные рубрики" --licence mit --out results/unseen3/scibench/rows.jsonl
+
+from the test split of `ai-forever/ru-scibench-grnti-classification`, revision
+`a984f8a65b2e`, downloaded by hand. The per-checkpoint logits come from
+`results/analysis/score_ladder.py`, which needs the weights.
+
 ### Biases on every checkpoint of the ladder
 
     python3 -I results/analysis/ladder_bias.py results/unseen

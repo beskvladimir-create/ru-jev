@@ -293,6 +293,16 @@ at which it was recorded.
 | `README.md` | | the per-vocabulary table and which run is which |
 | `FINDINGS.md` | | the mistake that made the augmented runs void |
 
+### `results/unseen3/`
+
+The further unseen datasets. `README.md` holds the rule, committed before any
+data. `scibench/rows.jsonl` holds the 990 questions of the GRNTI scientific
+rubrics with the same fields as `unseen/unseen_rows.jsonl`, and
+`scibench/<checkpoint>.jsonl` the raw logits of each checkpoint on them, with
+the fields of `unseen_v13.jsonl`. `ladder_rank.md` holds the tables. The
+directory name is in Latin letters on purpose: a Cyrillic path broke the
+extraction of the Zenodo archive in earlier versions.
+
 ### `results/vocab_bias/`
 
 One file, `README.md`, holding the tables that `results/analysis/vocab_bias.py`
