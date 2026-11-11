@@ -216,6 +216,20 @@ It reads the per-checkpoint logits from `results/unseen/ladder/`. The
 intermediate weights are not published, only their scores on these rows.
 Standard library only, no network.
 
+### Biases, per-label contributions and seed spread on the vocabularies
+
+    python3 -I results/analysis/vocab_bias.py
+
+Writes the tables that `results/vocab_bias/README.md` holds: for every label
+vocabulary, every slice and both candidate counts, the accuracy of each
+published run, the difference between the releases before and after a
+per-option correction, each label's contribution to that difference in
+questions, the difference with any one label left out, how often each release
+answers `qa`, the spread between three seeds of the v1.1 recipe with an exact
+McNemar test, and the cells where the difference between the releases is no
+larger than that spread. It reads only the per-row score files. Standard library
+only, no network, no weights.
+
 ### Biases on every checkpoint of the ladder
 
     python3 -I results/analysis/ladder_bias.py results/unseen

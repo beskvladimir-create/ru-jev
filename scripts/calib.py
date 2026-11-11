@@ -132,14 +132,25 @@ LBFGS_GTOL = 1e-9
 
 
 def lbfgs(fun_grad, x0, memory=LBFGS_MEMORY, max_iter=LBFGS_MAX_ITER,
-          gtol=LBFGS_GTOL, ftol=1e-12):
+          gtol=LBFGS_GTOL, ftol=1e-12, bounds=None):
     """Limited-memory BFGS with a backtracking Armijo line search.
 
     Written out here rather than taken from scipy so that the calibration and
     the scripts that reproduce its figures depend on nothing but the standard
     library and run identically anywhere.
+
+    bounds, when given, is one (low, high) pair per coordinate and every trial
+    point is projected into the box. It is there to stop a run away rather than
+    to shape the answer: the box is set so wide in fit_calibration that no fit
+    which converges can reach it, and every temperature this repository
+    publishes sits in the middle of it.
     """
-    x = list(x0)
+    def project(v):
+        if bounds is None:
+            return v
+        return [min(max(c, lo), hi) for c, (lo, hi) in zip(v, bounds)]
+
+    x = project(list(x0))
     f, g = fun_grad(x)
     S, Y, RHO = [], [], []
     it = 0
@@ -169,7 +180,7 @@ def lbfgs(fun_grad, x0, memory=LBFGS_MEMORY, max_iter=LBFGS_MAX_ITER,
             S, Y, RHO = [], [], []
         step, fn, gn, xn = 1.0, None, None, None
         for _ in range(60):
-            xn = [xi + step * di for xi, di in zip(x, d)]
+            xn = project([xi + step * di for xi, di in zip(x, d)])
             fn, gn = fun_grad(xn)
             if fn <= f + 1e-4 * step * slope:
                 break
@@ -262,7 +273,14 @@ def fit_calibration(samples, fit_temperature=True, start_T=1.0):
     data = _prepare(samples, vocab)
     k = len(vocab)
     x0 = ([math.log(start_T)] if fit_temperature else []) + [0.0] * (k - 1)
-    x, f, iters = lbfgs(lambda th: _nll_grad(th, data, k, fit_temperature), x0)
+    # A box far outside anything meaningful: a temperature between 1e-3 and 1e3
+    # and biases within 50 of each other, which on logits of order ten is total
+    # certainty either way. It only catches the case where the likelihood keeps
+    # improving as the temperature goes to zero, which happens on a slice the
+    # model separates perfectly and which would otherwise overflow.
+    bounds = ([(-7.0, 7.0)] if fit_temperature else []) + [(-50.0, 50.0)] * (k - 1)
+    x, f, iters = lbfgs(lambda th: _nll_grad(th, data, k, fit_temperature), x0,
+                        bounds=bounds)
     if fit_temperature:
         T = math.exp(x[0])
         b = [0.0] + list(x[1:])
@@ -284,7 +302,7 @@ def fit_T_only(samples, start_T=1.0):
         f, g = _nll_grad([th[0]] + [0.0] * (len(vocab) - 1), data, len(vocab), True)
         return f, [g[0]]
 
-    x, f, _ = lbfgs(fg, [math.log(start_T)])
+    x, f, _ = lbfgs(fg, [math.log(start_T)], bounds=[(-7.0, 7.0)])
     return math.exp(x[0])
 
 
