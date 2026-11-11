@@ -293,6 +293,12 @@ at which it was recorded.
 | `README.md` | | the per-vocabulary table and which run is which |
 | `FINDINGS.md` | | the mistake that made the augmented runs void |
 
+### `results/vocab_bias/`
+
+One file, `README.md`, holding the tables that `results/analysis/vocab_bias.py`
+produces from the score files of the bench and of the two probes. It adds no
+data of its own.
+
 ### `results/training/` and `results/analysis/`
 
 `results/training/` holds the standard output of the released training run and
