@@ -271,6 +271,16 @@ rubrics offered at once. Everything it computes was decided after the rule was
 written and after the verdict was known, and it is marked as such in the output.
 Standard library only, no network, no weights.
 
+    python3 -I results/analysis/matrix_prefix.py > results/unseen3/prefix.md
+
+Asks whether v1.3 stays ahead of the second v1.1 seed when the four rubrics
+whose names start with a training option (Биология, Геология, Горное дело,
+Математика) are left out: on the alphabetical ten without them, then over twenty
+random tens of all 28 rubrics and twenty random tens of the 24 rubrics without a
+prefix match, seeds 0 to 19, with intervals over rows and over labels. Added
+after the reading rule, in answer to a question on the Hugging Face thread.
+Standard library only, no network, no weights.
+
 ### Biases on every checkpoint of the ladder
 
     python3 -I results/analysis/ladder_bias.py results/unseen
