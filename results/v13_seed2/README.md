@@ -104,9 +104,57 @@ of a new checkpoint is worth nothing until that holds.
 
 ## The build that was trained on
 
-Filled in after the data step and before training, in a later commit on this
-branch.
+Built 2026-11-12 with `scripts/build_data.py` as it stood at commit `96fb67f`,
+run with its defaults, which is `--include-rucola` and `--cap 30000`.
 
-| File | sha256 | rows |
-|---|---|---|
-| | | |
+| File | sha256 | rows | bytes |
+|---|---|---|---|
+| `train.jsonl` | `39ad58ba24818f078f9d1bbb64cfe62f514abb5e1bff153eff9f43fbae327fcf` | 143,991 | 68,987,169 |
+| `val.jsonl` | `8b39de0a87b46a5aff61f894b0e2cfa48a2b2862e4c930a20920f7e457398b4f` | 26,746 | 13,002,155 |
+
+### What the check found
+
+| Check | Reference | This build | |
+|---|---|---|---|
+| training decisions | 143,991 | 143,991 | matches |
+| validation decisions | 26,746 | 26,746 | matches |
+| tasks | 13, completeness check passing | 13, passing | matches |
+| rows per task | the builder's own `EXPECTED` table | every task equal to it | matches |
+| distinct surface forms of the intent labels | 240 | 198 | see below |
+
+**The 240 is a nominal figure and the measured number for this builder is 198.**
+Four styles over 60 intents is 240 only if no two of them ever agree. The
+clipped style, `jargon_clip`, keeps the first word of the label and cuts it to
+five characters, so the 60 intents collapse onto 18 values: every label that
+starts with `email` becomes `емэйл`, every one that starts with `calendar`
+becomes `кален`. 60 English keys, 60 Russian words, 60 transliterations and 18
+clipped forms, less 16 forms that two styles produce alike, is 198. The style
+functions give that number on their own, without any data.
+
+The count is of surface forms that appear as an option anywhere in the mixture,
+and on the two mixtures that are still on disk it returns exactly what
+`results/seeds/FINDINGS.md` recorded for them: 120 for the stale mixture the
+earlier seed runs used, where the only single Cyrillic words are `посчитать` and
+`приветствие`, and 60 for the v1.1 mixture. This build has 198 forms and 20
+single Cyrillic words, `аларм`, `вэзер`, `иот`, `кукинг`, `ньюс`, `плэй` and
+the rest, which are the transliterated and clipped forms. The jargon lesson is
+in this mixture and was not in theirs. `FINDINGS.md` says "with four styles
+there would have been 240"; that sentence states an expectation, not a
+measurement, and 198 is the figure a measurement returns.
+
+### Two further notes on the build
+
+`RussianNLP/rucola` is no longer served by the hub; `datasets` reported that it
+could not be found and used the local cache of 2026-11-02, which is the copy
+the released run was built from. The task is present and complete, 12,101
+training and 1,344 validation rows, but a rebuild on a machine without that
+cache will not get it.
+
+Train and validation share 372 input texts, 0.26 percent, almost all of them in
+the two MASSIVE tasks where the same utterance occurs in both source splits.
+The current builder gives 396 on the same sources, so this is a property of the
+sources rather than of the split, and it is the same in the released run.
+
+A byte comparison with the mixture v1.3 actually trained on remains impossible:
+no copy of it survives on disk, only the v1.1 mixture and the stale one, and its
+hashes were never recorded.
