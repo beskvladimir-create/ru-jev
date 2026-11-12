@@ -120,6 +120,15 @@ label set they were fitted on and do not carry over to a different one.
 v1.1 rises to 0.673 under the same fit, so v1.3 stays about three points
 behind on this set.
 
+The same lean shows on the probe vocabularies: under several unfamiliar
+wordings v1.1 almost never answers the `qa` label and v1.3 answers it freely.
+`results/vocab_bias/README.md` shows how much of each vocabulary difference
+this accounts for.
+
+If your options are codes whose meaning you know, pass the full name as the
+option text and keep the code as your ID. In a check posted on the Hugging Face
+forum by John6666, the full name alone did as well as code plus name.
+
 ### What a cheap baseline gets
 
 A number means nothing without something to compare it to. `scripts/baselines.py`
