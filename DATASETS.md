@@ -23,6 +23,7 @@ unseen-dataset comparison and are not part of any training mixture.
 |---|---|---|---|---|---|
 | Headline topics | `ai-forever/headline-classification` | MIT | yes | 6 news topics, test split, 1,000 sampled rows | choice |
 | CEDR emotions | `sagteam/cedr_v1` | Apache-2.0 | yes | 5 emotions, rows with exactly one label, 1,000 sampled rows | choice |
+| GRNTI scientific rubrics | `ai-forever/ru-scibench-grnti-classification` | MIT | yes | 10 most frequent rubrics of the test split, 990 rows, 5 candidates per question | choice |
 
 The same corpora are mirrored by MTEB as `mteb/HeadlineClassification` and
 `mteb/CEDRClassification`; the figures in the paper come from the two sources
@@ -55,6 +56,7 @@ Every figure in the paper comes from these exact revisions. Verified
 | `ai-forever/MERA` | dataset | `e9628afed9c1` |
 | `ai-forever/headline-classification` | dataset | `1e9d989d65f6` |
 | `sagteam/cedr_v1` | dataset | `abafbe63cf92` |
+| `ai-forever/ru-scibench-grnti-classification` | dataset | `a984f8a65b2e` |
 | `jhu-clsp/mmBERT-base` | model, backbone | `c5955035435e` |
 | `convaiinnovations/laya-multilingual` | model, comparison | `1720e3e3357c` |
 

@@ -20,6 +20,11 @@ scored, as a control on the scoring path.
 
 Deterministic: the option order of each row is fixed in the row file, and the
 scorer applies no temperature.
+
+Resumable: each checkpoint is written to a temporary file and renamed only when
+it holds as many rows as the input, so a run that is interrupted leaves no
+half-written dump behind and the next run picks up where it stopped. A finished
+dump with the wrong number of rows is scored again rather than trusted.
 """
 import argparse
 import json
@@ -55,6 +60,7 @@ def main():
     ap.add_argument("--out", required=True, help="where the per-checkpoint dumps go")
     ap.add_argument("--python", default=sys.executable,
                     help="the interpreter that has torch and transformers")
+    ap.add_argument("--only", help="comma separated tags, to score part of the ladder")
     a = ap.parse_args()
 
     rows = [l for l in open(a.rows, encoding="utf-8") if l.strip()
@@ -67,19 +73,30 @@ def main():
         fh.writelines(rows)
     print("%d rows with set == %r" % (len(rows), a.which))
 
+    wanted = set(a.only.split(",")) if a.only else None
     scorer = os.path.join(ROOT, "scripts", "score_rujev.py")
     for directory, tag in LADDER:
+        if wanted is not None and tag not in wanted:
+            continue
         out = os.path.join(a.out, tag + ".jsonl")
         if os.path.exists(out):
-            print("skip %s, already scored" % tag)
-            continue
+            have = sum(1 for _l in open(out, encoding="utf-8"))
+            if have == len(rows):
+                print("skip %s, already scored" % tag, flush=True)
+                continue
+            print("rescoring %s, it holds %d rows of %d" % (tag, have, len(rows)), flush=True)
         model = os.path.join(a.models, directory)
         if not os.path.isdir(model):
-            print("missing %s, skipped" % model)
+            print("missing %s, skipped" % model, flush=True)
             continue
         print("== %s" % tag, flush=True)
+        part = out + ".partial"
         subprocess.run([a.python, scorer, "--model", model, "--rows", subset,
-                        "--out", out, "--tag", tag], check=True)
+                        "--out", part, "--tag", tag], check=True)
+        have = sum(1 for _l in open(part, encoding="utf-8"))
+        if have != len(rows):
+            raise SystemExit("%s wrote %d rows of %d" % (tag, have, len(rows)))
+        os.replace(part, out)
     os.remove(subset)
     print("done")
 
