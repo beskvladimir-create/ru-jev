@@ -166,3 +166,72 @@ sources rather than of the split, and it is the same in the released run.
 A byte comparison with the mixture v1.3 actually trained on remains impossible:
 no copy of it survives on disk, only the v1.1 mixture and the stale one, and its
 hashes were never recorded.
+
+## The run as it happened
+
+Everything below is a record of the run, written after it finished. The rule
+above was committed before the training started and is not touched by it.
+
+| Epoch | Mean training loss | Validation loss | Validation accuracy | Fitted temperature |
+|---|---|---|---|---|
+| 1 of 4 | 0.5975 | 0.4984 | 0.7631 | 0.9274 |
+| 2 of 4 | 0.4249 | 0.4255 | 0.8137 | 1.2811 |
+| **3 of 4, the epoch the rule reads** | **0.2529** | **0.4849** | **0.8220** | **2.0116** |
+| 4 of 4 | 0.0759 | 0.7946 | 0.8227 | 3.7980 |
+
+Validation is the 26,746 rows of `val.jsonl` of the rebuilt mixture, every epoch
+on the same rows. The full training log is in
+[`train_log.txt`](train_log.txt), verbatim, including the warnings the loaders
+printed.
+
+Where the temperatures come from. The run itself fits a temperature only once,
+at the end, on the fourth epoch, and wrote 3.7980 into the release folder. The
+other three were fitted afterwards with the same instrument: the validation pass
+and the `fit_temperature` of `scripts/train.py`, the same collate with the
+option order left alone, the same batch size out of the same config, on the same
+rows. `scripts/fit_temperature.py` was not used for this. That script is the one
+shipped for a reader to calibrate on their own decisions, it runs on the CPU, and
+it is not the path the released temperature came from. As a control the fourth
+epoch was fitted again through the same path and returned 3.7980, the figure the
+training had already written, and the validation loss and accuracy of all four
+epochs came back identical to the log.
+
+The temperature rises with every epoch, from 0.93 to 3.80, while the validation
+loss turns at the third epoch and the accuracy stops moving. That is the same
+shape the released run has, and it is the reason the epoch is fixed in advance
+rather than chosen afterwards: the fourth epoch is the most accurate by a
+hundredth and the worst calibrated by a factor of two.
+
+### The weights, and what they are
+
+The four epochs and the calibrated release are on local disk, outside this
+repository, in `model/v13-seed2/{ep0,ep1,ep2,ep3,final}`. They are not
+published. What this repository carries is the scores they produced.
+
+Two of those folders hold one and the same model. The external snapshotter takes
+its folder name from the `epoch` field of `calibration.json`, and
+`scripts/train.py` labels its last save `final` rather than `3`, so the fourth
+epoch arrived as `epfinal` and is stored here as `ep3`. The release folder is
+that same save with the temperature filled in. Their weights agree byte for
+byte, sha256
+`1a0258ce3e92b9a6773cd0e5c555bd7f57df52b7b9008f1e06d00dcd274b6d57`, and they
+differ only in `calibration.json`. Both are scored, separately, as the control
+on the scoring path that the rule above asks for: the same weights read from two
+directories have to answer identically.
+
+### The rental
+
+| | |
+|---|---|
+| Card | NVIDIA RTX PRO 4000 Blackwell, 24 GB |
+| Rented | 2026-11-12 15:30:46 UTC to 21:31:46 UTC, 6 hours 1 minute |
+| Rate | 0.576 USD per hour |
+| Cost | 3.47 USD |
+| Training | 15:37:18 UTC to about 20:46 UTC, 9,000 steps per epoch, batch 16 |
+
+The hour after the training went to fitting the temperatures of the first three
+epochs and to taking the weights down. Each epoch was taken off the card as soon
+as it was snapped rather than at the end, so that a card that dies, or a balance
+that runs out, costs at most the epoch in flight. Every transfer was checked by
+comparing the sha256 of the weights on both sides, and the folder was put in
+place only after the two agreed.
