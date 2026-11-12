@@ -49,7 +49,15 @@ in `results/training/v1_3_train.log`, so a byte comparison against the original
 is not available. The build is instead held against everything the released run
 did record, before anything is trained:
 
-- 240 distinct surface forms of the intent labels, four styles over 60 intents;
+- 198 distinct surface forms of the intent labels, four styles over 60 intents,
+  which is 60 English keys, 60 Russian words, 60 transliterations and 18 clipped
+  forms, less 16 that coincide across styles. The rule as first written asked
+  for 240. That was 60 times 4, an expectation rather than a measurement, and it
+  was corrected to 198 in commit `08c03ee` on `main`, in
+  `results/seeds/FINDINGS.md` and `configs/SEED_RUNS.md`, from the style
+  functions of the builder at `96fb67f`. The check below was read against 198;
+  nothing else in this rule changed, and the paragraph recording what the check
+  found is left as it was written;
 - 143,991 training and 26,746 validation decisions;
 - 13 tasks, with the builder's own completeness check passing.
 
