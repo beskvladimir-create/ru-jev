@@ -250,6 +250,27 @@ from the test split of `ai-forever/ru-scibench-grnti-classification`, revision
 `a984f8a65b2e`, downloaded by hand. The per-checkpoint logits come from
 `results/analysis/score_ladder.py`, which needs the weights.
 
+### The full score matrix and the checks it allows
+
+    python3 -I results/analysis/score_ladder.py \
+        --set "научные рубрики, все 28" --rows results/unseen3/matrix/rows.jsonl \
+        --models ../model --out results/unseen3/matrix
+
+Scores all ten checkpoints on all 2,772 test texts of the GRNTI rubrics against
+all 28 rubric labels, 776,160 pairs, and writes one file per checkpoint into
+`results/unseen3/matrix/`. It needs the weights, and it saves per checkpoint, so
+an interrupted run continues where it stopped. On one CPU it takes about twelve
+hours.
+
+    python3 -I results/analysis/matrix_sensitivity.py
+
+Writes the sections that `results/unseen3/ladder_rank.md` carries after its
+verdict: the assembled alphabetical ten held against the dump that was scored
+directly, twenty random tens of the 28 rubrics with seeds 0 to 19, and all 28
+rubrics offered at once. Everything it computes was decided after the rule was
+written and after the verdict was known, and it is marked as such in the output.
+Standard library only, no network, no weights.
+
 ### Biases on every checkpoint of the ladder
 
     python3 -I results/analysis/ladder_bias.py results/unseen

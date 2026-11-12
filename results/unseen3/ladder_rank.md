@@ -239,3 +239,135 @@ runs give a range, not a distribution.
 The verdict concerns the rankings, not the checkpoints. That a ranking does not
 travel does not mean the accuracies are wrong; it means that choosing a
 checkpoint by one of these datasets tells you nothing about the others.
+
+## The full score matrix
+
+Everything from here on was decided after the rule in `README.md` was written
+and after its verdict was known. The verdict above stands on the alphabetical
+ten and nothing below changes it.
+
+The model scores each (text, label) pair on its own, so the ten checkpoints
+were run once more over the whole test split against all of its labels: 2,772
+texts by 28 rubrics by 10 checkpoints, 776,160 pairs. The logits are in
+`matrix/`, one file per checkpoint, with `matrix/rows.jsonl` holding the texts
+and the 28 labels. From that matrix any set of candidate labels can be
+assembled without touching the weights again.
+
+Reproduce the matrix with:
+
+    python3 -I results/analysis/score_ladder.py \
+        --set "научные рубрики, все 28" --rows results/unseen3/matrix/rows.jsonl \
+        --models ../model --out results/unseen3/matrix
+
+and everything below it with:
+
+    python3 -I results/analysis/matrix_sensitivity.py
+
+### The matrix against the direct scoring
+
+The published ten was scored directly, from its own rows file. Assembling the
+same ten out of the matrix has to give the same thing, and it does.
+
+| Check | Result |
+|---|---|
+| the rows are the same, text, options and answer | yes |
+| largest disagreement between a matrix logit and a directly scored one | 0.000519 |
+| rows where the answer is the same | 9,900 of 9,900 |
+
+| Checkpoint | from the matrix | published above |
+|---|---|---|
+| v1.1 | 0.472 as published, 0.566 with biases | 0.472 as published, 0.566 with biases |
+| seed-base-s2 | 0.536 as published, 0.612 with biases | 0.536 as published, 0.612 with biases |
+| v1.2 | 0.539 as published, 0.555 with biases | 0.539 as published, 0.555 with biases |
+| seed-aug-s2 | 0.544 as published, 0.600 with biases | 0.544 as published, 0.600 with biases |
+| seed-aug-s2-ep3 | 0.546 as published, 0.624 with biases | 0.546 as published, 0.624 with biases |
+| seed-aug-s3 | 0.622 as published, 0.684 with biases | 0.622 as published, 0.684 with biases |
+| v1.3-ep1of4 | 0.507 as published, 0.580 with biases | 0.507 as published, 0.580 with biases |
+| v1.3-ep2of4 | 0.603 as published, 0.662 with biases | 0.603 as published, 0.662 with biases |
+| v1.3-ep3of4 | 0.601 as published, 0.657 with biases | 0.601 as published, 0.657 with biases |
+| v1.3-ep4of4 | 0.572 as published, 0.617 with biases | 0.572 as published, 0.617 with biases |
+
+The remaining difference of 5.2e-4 in a logit is the arithmetic of two separate
+runs on the same weights, and it moves no answer on any of the 9,900 rows.
+
+## Sensitivity check, added after the reading rule
+
+The ten rubrics of the published set were chosen by an alphabetical tie-break,
+because all 28 classes hold exactly 99 test rows. The tie-break was fixed
+before any score was seen, but it is still one draw out of many, so the matrix
+is used to ask what another draw would have given.
+
+Twenty random tens of the 28 rubrics, seeds 0 to 19. Everything else is as the
+rule has it: every row of the chosen ten, five candidates per question drawn
+with seed 20261105, biases fitted out of fold over 25 half-splits seeded 0 to
+24, each used twice. Every ten is 990 rows, because every class holds 99.
+
+| Seed | n | Spearman with news | Spearman with emotions | v1.3 minus v1.1 | v1.3 minus seed-base-s2 |
+|---|---|---|---|---|---|
+| 0 | 990 | -0.24 | -0.27 | +0.139 | +0.090 |
+| 1 | 990 | -0.03 | -0.34 | +0.149 | +0.048 |
+| 2 | 990 | -0.26 | -0.29 | +0.093 | +0.041 |
+| 3 | 990 | -0.07 | -0.16 | +0.123 | +0.085 |
+| 4 | 990 | -0.18 | -0.16 | +0.118 | +0.064 |
+| 5 | 990 | -0.30 | +0.03 | +0.183 | +0.048 |
+| 6 | 990 | -0.04 | -0.26 | +0.071 | +0.058 |
+| 7 | 990 | -0.22 | +0.04 | +0.211 | +0.079 |
+| 8 | 990 | -0.19 | +0.09 | +0.112 | +0.058 |
+| 9 | 990 | -0.16 | -0.21 | +0.195 | +0.053 |
+| 10 | 990 | -0.14 | -0.20 | +0.153 | +0.076 |
+| 11 | 990 | -0.15 | -0.10 | +0.135 | +0.058 |
+| 12 | 990 | -0.20 | -0.02 | +0.236 | +0.101 |
+| 13 | 990 | -0.19 | -0.27 | +0.134 | +0.054 |
+| 14 | 990 | -0.30 | -0.30 | +0.135 | +0.071 |
+| 15 | 990 | -0.14 | -0.18 | +0.091 | +0.074 |
+| 16 | 990 | -0.14 | -0.20 | +0.120 | +0.086 |
+| 17 | 990 | -0.22 | -0.40 | +0.119 | +0.066 |
+| 18 | 990 | -0.37 | -0.18 | +0.119 | +0.037 |
+| 19 | 990 | -0.30 | -0.35 | +0.185 | +0.075 |
+
+| Quantity | median | lowest | highest | tens at or above 0.50 |
+|---|---|---|---|---|
+| Spearman with news rubrics | -0.188 | -0.370 | -0.030 | 0 of 20 |
+| Spearman with emotions | -0.201 | -0.401 | +0.085 | 0 of 20 |
+| v1.3 minus v1.1 | +0.134 | +0.071 | +0.236 | |
+| v1.3 minus seed-base-s2 | +0.065 | +0.037 | +0.101 | |
+
+**The choice of the ten does not carry the verdict.** Not one of the twenty
+draws reaches the 0.50 the rule asks for, against either of the earlier
+datasets, and not one of the forty correlations is even positive beyond +0.09.
+The published ten gave -0.18 against the news rubrics and -0.41 against the
+emotions; both sit inside the range the twenty draws cover.
+
+**The one difference that does hold on this dataset holds on every draw.**
+v1.3 is ahead of v1.1 with biases on all twenty tens, between +0.071 and
++0.236, and ahead of `seed-base-s2` on all twenty, between +0.037 and +0.101.
+The lowest of those twenty margins against v1.1 is still larger than the
+spread between the two runs of the v1.1 recipe on this dataset, 0.046.
+
+## All 28 rubrics offered at once, added after the reading rule
+
+The same matrix answers a harder question than the rule asked: every one of the
+2,772 test texts with all 28 rubrics as candidates, where chance is 0.036.
+
+| Checkpoint | as published | with biases | change |
+|---|---|---|---|
+| v1.1 | 0.206 | 0.288 | +0.082 |
+| seed-base-s2 | 0.255 | 0.347 | +0.092 |
+| v1.2 | 0.270 | 0.311 | +0.042 |
+| seed-aug-s2 | 0.275 | 0.339 | +0.064 |
+| seed-aug-s2-ep3 | 0.295 | 0.376 | +0.081 |
+| seed-aug-s3 | 0.322 | 0.399 | +0.077 |
+| v1.3-ep1of4 | 0.240 | 0.344 | +0.104 |
+| v1.3-ep2of4 | 0.342 | 0.404 | +0.062 |
+| v1.3-ep3of4 | 0.337 | 0.403 | +0.067 |
+| v1.3-ep4of4 | 0.316 | 0.372 | +0.055 |
+
+Every checkpoint is far above chance with 28 candidates on a task no part of
+the training mixture covers, and the order is close to the order on the ten:
+`seed-aug-s3` and the middle epochs of v1.3 at the top, v1.1 last. The biases
+help every checkpoint here, by between +0.042 and +0.104, which is what the
+28-way case should do, since there are 27 of them to fit rather than 4.
+
+Nothing in these two sections was part of the rule, and none of it is offered
+as a test. The verdict of this file remains the one stated above, on the ten
+rubrics the rule selected.

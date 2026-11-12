@@ -303,6 +303,17 @@ the fields of `unseen_v13.jsonl`. `ladder_rank.md` holds the tables. The
 directory name is in Latin letters on purpose: a Cyrillic path broke the
 extraction of the Zenodo archive in earlier versions.
 
+`matrix/` holds the full score matrix: `rows.jsonl` is all 2,772 test texts of
+the same split with all 28 rubrics as the options of every question, and
+`matrix/<checkpoint>.jsonl` the logits of one checkpoint over it, 2,772 rows of
+28 numbers each, in the fields of `unseen_v13.jsonl`. Because each (text, label)
+pair is scored on its own, any set of candidate labels can be assembled from
+these files without the weights. The `answer` field of a matrix row is the
+position of the correct rubric among the 28, not among five candidates, so the
+accuracies computed straight from these files are 28-way and not comparable
+with the five-candidate tables unless the candidates are drawn first, which is
+what `results/analysis/matrix_sensitivity.py` does.
+
 ### `results/vocab_bias/`
 
 One file, `README.md`, holding the tables that `results/analysis/vocab_bias.py`
