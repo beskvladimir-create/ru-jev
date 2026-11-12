@@ -21,7 +21,10 @@ minutes after that commit, so v1.3 trained on a mixture that had those styles.
 The file `code/data/train.jsonl` on the laptop was created on 2026-11-02 at
 19:49, eight hours before the commit. In it the intents have 120 distinct
 surface forms: 60 in Latin script and 60 as Russian words. That is two styles,
-`None` and `INTENT_RU`. With four styles there would have been 240. There are no
+`None` and `INTENT_RU`. With four styles there are 198, not the 240 this
+file first stated: the clipped style folds the 60 intents into 18 forms, and
+16 forms coincide across styles (corrected 2026-11-12, computed from the style
+functions of the builder at commit `96fb67f`). There are no
 jargon forms in that file at all: the only single Cyrillic words present are
 `посчитать` and `приветствие`, ordinary Russian words.
 
