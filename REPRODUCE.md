@@ -404,6 +404,32 @@ on the instrument, the accuracy of each checkpoint out of fold, the four
 quantities with intervals over rows and over labels, and the verdict the rule
 gives per dataset.
 
+## The unlabelled RuCoLA test rows
+
+Recomputes every published figure that rests on the released validation split,
+with the 2,789 unlabelled RuCoLA test rows and without them. Reads only files in
+this repository, needs no weights and no network:
+
+    python3 -I results/analysis/rucola_test.py
+
+Tables in `results/rucola_test/README.md`.
+
+To rebuild the index of affected rows instead of trusting the committed one, you
+need the dataset and the mixture, neither of which is in this repository. With
+both in hand the index is every position `i` of
+`results/validation/val_v13_trainsplit.jsonl` whose row is `rucola` and whose
+sentence, stripped and hashed with sha256, is one of the 2,789 in
+`results/rucola_test/test_sentence_sha256.txt` and is not also in RuCoLA's
+labelled splits. The result must equal `val_v13_affected_rows.txt`.
+
+The builder no longer admits those rows. `rows_simple` drops a negative raw
+label before `answer_from` maps it, so a RuCoLA build is now 9,591 training and
+1,065 validation rows rather than 12,101 and 1,344, and the composition check
+expects the smaller figure. The other three callers of `rows_simple`,
+`rureviews`, `toxicity` and `georeview`, hold no negative label in any split and
+lose nothing. No checkpoint was retrained, so every published number stays as
+published and the recomputation above is what the numbers would have been.
+
 ## Split stability of a rebuilt mixture
 
     python scripts/split_overlap.py --earlier <earlier build> --rebuilt data \

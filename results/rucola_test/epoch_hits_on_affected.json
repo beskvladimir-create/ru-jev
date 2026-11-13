@@ -1,0 +1,21 @@
+{
+  "what": "how many of the affected validation rows each epoch of the v1.3 run answers as the mixture labelled them, scored with scripts/score_rujev.py on one CPU",
+  "epochs": {
+    "epoch 1 of 4": {
+      "correct": 145,
+      "n": 252
+    },
+    "epoch 2 of 4": {
+      "correct": 131,
+      "n": 252
+    },
+    "epoch 3 of 4, released": {
+      "correct": 118,
+      "n": 252
+    },
+    "epoch 4 of 4": {
+      "correct": 126,
+      "n": 252
+    }
+  }
+}
