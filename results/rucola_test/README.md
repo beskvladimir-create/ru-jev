@@ -111,6 +111,29 @@ The epoch that wins without the affected rows is **epoch 3 of 4, released**, whi
 The two counts come from different code paths, the trainer's batched evaluation and the standalone scorer, which disagree by 72 decisions over the whole split and so by about one over 252. The gap between the third epoch and the fourth is 112 decisions, so that mismatch cannot turn the comparison over.
 
 
+## The consequence that matters most
+
+The invented rows are not spread evenly over the two options. Every one of them
+says `неприемлемо`, so removing them changes what a model has to beat on this
+task. On the validation split the release was measured on:
+
+| | Rows | Share of the majority class | v1.3 |
+|---|---|---|---|
+| rucola as published | 1,344 | 0.5990, `приемлемо` 805 against `неприемлемо` 539 | 0.6473 |
+| rucola without the test rows | 1,092 | 0.7372, `приемлемо` 805 against `неприемлемо` 287 | 0.6886 |
+
+Read as published, the release sits five points above a constant answer. Read on
+the rows that have a real label, it sits five points below one. The invented
+rows made the task look harder than it is and the model look better on it than
+it is, and both effects point the same way.
+
+This is computed from the mixture on disk, not from a file in this repository,
+so it is stated here rather than printed by the script. It also means the
+baseline table in the repository README, where rucola reads 0.587 for the
+majority class and 0.609 for TF-IDF against 0.650 for v1.1, rests on a
+contaminated split and needs recomputing before it is quoted again. That rerun
+needs `scripts/baselines.py` over a clean build and is not done here.
+
 ## What is not affected
 
 The comparison of the two releases on the six Russian SuperGLUE tasks does not
