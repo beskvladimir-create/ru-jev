@@ -334,6 +334,76 @@ which. Their validation scores are not included, 35 MB of a mixture no release
 was built from; the mistake that made the experiment void is written up in
 `results/seeds/FINDINGS.md`.
 
+## A second seed of the v1.3 recipe
+
+The rule this run is read by was committed before the training started, in
+`results/v13_seed2/README.md`, and the run itself is recorded in the same file
+after it. The weights are not published; the scores are.
+
+The mixture was rebuilt with the builder the released run was trained with,
+commit `96fb67f`, because a later commit changed the split. The hashes of the
+rebuilt `train.jsonl` and `val.jsonl`, and what a check of the build found, are
+in that README. No copy of the mixture the release was actually trained on
+survives, so a byte comparison against it is not possible.
+
+    python3 scripts/train.py --config configs/v1_3_seed2.yaml
+
+The config is `configs/v1_3_seed2.yaml`, which differs from `configs/v1_3.yaml`
+in the seed and the output directory and in nothing else. Four epochs, 9,000
+steps each, batch 16, about five hours on one rented card. `scripts/train.py`
+writes every epoch into the same output directory, so an external snapshotter
+copied each epoch out as it was saved; keeping four epochs needs that, or four
+directories.
+
+Training fits a temperature once, for the epoch it stops at. The other three
+were fitted afterwards with the same instrument:
+
+    python3 results/analysis/fit_seed2_temperatures.py \
+        --config configs/v1_3_seed2.yaml --rows data/val.jsonl \
+        <snapshot of each epoch>
+
+On the card this took a few minutes per epoch; it runs on a CPU as well, slowly.
+The fourth epoch is fitted again by the same command as a control and has to
+return the figure the training already wrote into the release. It did: 3.7980,
+with the validation loss and accuracy of all four epochs identical to the
+training log.
+
+Then the nine checkpoints are scored over every dataset the rule reads:
+
+    python3 results/analysis/score_seed2.py --models <weights> \
+        --rows results/unseen/unseen_rows.jsonl --set "рубрики новостей" \
+        --out results/v13_seed2/news
+    python3 results/analysis/score_seed2.py --models <weights> \
+        --rows results/unseen/unseen_rows.jsonl --set "эмоции" \
+        --out results/v13_seed2/emotions
+    python3 results/analysis/score_seed2.py --models <weights> \
+        --rows results/unseen3/matrix/rows.jsonl --out results/unseen3/matrix \
+        --only v1.3-seed2-ep1of4,v1.3-seed2-ep2of4,v1.3-seed2-ep3of4,v1.3-seed2-ep4of4,v1.3-seed2-final
+    python3 results/analysis/score_seed2.py --models <weights> \
+        --rows results/vocab3/rows.jsonl --out results/v13_seed2/vocab3
+    python3 results/analysis/score_seed2.py --models <weights> \
+        --rows results/fix18/rows.jsonl --out results/v13_seed2/fix18
+
+The wording bench and the style probe are scored once with all eighteen
+candidates, and the five-candidate views are taken from those logits by choosing
+columns, because each pair of a context and a candidate is scored on its own.
+Nothing is scored twice. On one CPU the five commands together take about eight
+hours; they are resumable, and a dump is renamed into place only when it holds
+every row.
+
+The scoring runs on the CPU on purpose. A card would do it in an hour, but then
+the control against the published dumps would be comparing two machines instead
+of one path against another, and it would stop meaning anything. On this CPU the
+four already published checkpoints come back with a largest logit difference of
+exactly zero.
+
+    python3 -I results/analysis/seed2.py
+
+Prints every table in `results/v13_seed2/README.md` after the rule: the control
+on the instrument, the accuracy of each checkpoint out of fold, the four
+quantities with intervals over rows and over labels, and the verdict the rule
+gives per dataset.
+
 ## Split stability of a rebuilt mixture
 
     python scripts/split_overlap.py --earlier <earlier build> --rebuilt data \

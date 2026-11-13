@@ -314,6 +314,40 @@ accuracies computed straight from these files are 28-way and not comparable
 with the five-candidate tables unless the candidates are drawn first, which is
 what `results/analysis/matrix_sensitivity.py` does.
 
+### `results/v13_seed2/`, the second seed of the v1.3 recipe
+
+A real second seed of the released recipe: the same mixture rebuilt with the
+builder the release was trained with, the same config except for the seed, four
+epochs kept, the third of them read, and the reading rule fixed before the
+training started.
+
+| File | Rows | Contents |
+|---|---|---|
+| `README.md` | | the rule, written before the run, then the run and every table |
+| `train_log.txt` | | the standard output of the run, verbatim |
+| `news/<checkpoint>.jsonl` | 1,000 | logits on the news rubrics of `unseen/unseen_rows.jsonl` |
+| `emotions/<checkpoint>.jsonl` | 1,000 | logits on the emotions of the same file |
+| `fix18/<checkpoint>.jsonl` | 6,000 | logits on the wording bench, all 18 candidates |
+| `vocab3/<checkpoint>.jsonl` | 2,000 | logits on the style probe, all 18 candidates |
+
+The checkpoint names are `v1.3-seed2-ep1of4` to `v1.3-seed2-ep4of4` for the four
+epochs of the new run, `v1.3-seed2-final` for the fourth epoch read from the
+release folder instead of the snapshot, and `v1.3`, `v1.1`, `seed-base-s2` and
+`seed-aug-s2-ep3` for the checkpoints the rule compares it with. The last four
+are already published elsewhere in `results/` and are scored again here through
+the same path on the same machine, which is what makes the comparison a
+comparison. The scientific rubrics of this run are not in this directory: they
+are in `results/unseen3/matrix/`, under the same checkpoint names, because that
+is where the matrix those numbers are taken from lives.
+
+The fields are those of `unseen_v13.jsonl`. The weights of the new run are not
+published, the same way the intermediate checkpoints of the ladder are not.
+
+`configs/v1_3_seed2.yaml` is the config it trained with. It differs from
+`configs/v1_3.yaml` in `seed` and in `out_dir`, and in nothing else. The seed
+1337 is the seed of `seed_aug_s2`, chosen so that two pairs of runs differ by one
+thing at a time rather than one.
+
 ### `results/vocab_bias/`
 
 One file, `README.md`, holding the tables that `results/analysis/vocab_bias.py`
