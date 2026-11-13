@@ -129,6 +129,12 @@ If your options are codes whose meaning you know, pass the full name as the
 option text and keep the code as your ID. In a check posted on the Hugging Face
 forum by John6666, the full name alone did as well as code plus name.
 
+The wording result is checked against training noise. A second run of each
+recipe, the v1.3 one trained under a reading rule recorded before training,
+keeps the jargon gain far above the spread between runs of the same recipe
+(+0.182 against at most 0.074 with eighteen candidates). On the news rubrics
+and the emotions the v1.3 recipe is not ahead. See `results/v13_seed2/`.
+
 ### What a cheap baseline gets
 
 A number means nothing without something to compare it to. `scripts/baselines.py`
