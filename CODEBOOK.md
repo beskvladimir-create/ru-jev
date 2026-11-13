@@ -284,6 +284,26 @@ at which it was recorded.
 | `split_overlap.md` | | both episodes side by side, with the hashes of every build |
 | `README.md` | | the three accuracy figures and why a rebuild does not recover the split |
 
+### `results/rucola_test/`, the unlabelled RuCoLA rows
+
+RuCoLA's test split carries no label; the loader fills it with -1 and the
+builder mapped that onto a valid option index, so 2,789 sentences entered the
+mixture as `неприемлемо`. 252 of them are in the validation split the release
+was measured on, 2,536 in its training split.
+
+| File | Rows | Contents |
+|---|---|---|
+| `README.md` | | what happened, where the rows went in each build, and every figure recomputed with them and without |
+| `test_sentence_sha256.txt` | 2,789 | sha256 of each stripped test sentence, sorted. The sentences themselves are not redistributed, see `DATASETS.md` |
+| `val_v13_affected_rows.txt` | 252 | zero based positions of the affected rows in `results/validation/val_v13_trainsplit.jsonl` |
+| `epoch_hits_on_affected.json` | | how many of those 252 rows each epoch of the v1.3 run answers as the mixture labelled them |
+
+`results/analysis/rucola_test.py` reads only those files and the validation dump.
+The fix is in `rows_simple` of `scripts/build_data.py`, which now drops a
+negative raw label before `answer_from` sees it; the expected rucola count in
+the builder's composition check moves from 12,101 to 9,591 accordingly. No
+checkpoint was retrained.
+
 ### `results/seeds/`, the seed replicates
 
 | File | Rows | Contents |

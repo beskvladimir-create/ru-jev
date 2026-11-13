@@ -329,6 +329,21 @@ def rows_simple(hf_id, task, dtype, text_col, label_col, options, val_fraction=0
             lab = r[label_col]
             if lab is None:
                 continue
+            # A hidden test split carries no label. RuCoLA ships its test rows
+            # with -1 and only `id, sentence` in the csv behind them, and
+            # `answer_from` mapped that -1 onto a perfectly valid option index,
+            # so 2,789 sentences entered the mixture carrying "неприемлемо", a
+            # label they do not have. The guard below used to read the mapped
+            # answer, which was in range, and therefore caught nothing. Drop a
+            # negative raw label before it is mapped. Checked against the other
+            # three callers of this function: `rureviews`, `toxicity` and
+            # `georeview` hold no negative label in any split, so none of them
+            # loses a row to this.
+            try:
+                if int(round(float(lab))) < 0:
+                    continue
+            except (TypeError, ValueError):
+                pass
             try:
                 ans = answer_from(lab)
             except Exception:
@@ -522,7 +537,7 @@ def main():
     EXPECTED = {"terra": 2616, "danetqa": 1749, "russe": 19845, "rwsd": 606,
                 "parus": 400, "rcb": 438, "rureviews": 27000, "toxicity": 27000,
                 "georeview": 27000, "massive_scenario": 11514,
-                "massive_intent": 11514, "mera_qa": 2208, "rucola": 12101}
+                "massive_intent": 11514, "mera_qa": 2208, "rucola": 9591}
     if not args.include_rucola:
         EXPECTED.pop("rucola")
     bad = []
