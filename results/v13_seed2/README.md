@@ -236,6 +236,27 @@ that runs out, costs at most the epoch in flight. Every transfer was checked by
 comparing the sha256 of the weights on both sides, and the folder was put in
 place only after the two agreed.
 
+### What was not kept
+
+The mixture itself did not come off the card. `train.jsonl` and `val.jsonl` were
+built on the rented machine and went down with it, and only their sha256 and row
+counts are recorded, in the table above. That is enough for a reader to rebuild
+with the pinned builder and check the result byte for byte, which is the contract
+`REPRODUCE.md` states, and it is more than the released v1.3 can offer, since its
+mixture hashes were never written down at all.
+
+One thing it costs. The per-epoch temperatures of this run cannot be fitted again
+on this machine without rebuilding that mixture first: a validation split with
+the same row count but different wording inside the rows returns a different
+temperature, and a figure fitted on anything other than this run's own split is
+not the same measurement. `results/analysis/fit_seed2_temperatures.py` was run
+here against a checkpoint of this run to show the committed script executes as
+committed, on a 200 row slice of a different split; it returned a number, and
+that number is deliberately not recorded anywhere as a temperature of this run.
+The control that does stand is on the card and in the table above: the fourth
+epoch, fitted again by this script on this run's own validation split, returned
+3.7980, the figure `scripts/train.py` had already written into the release.
+
 ## What the numbers say
 
 Everything in this section is the output of `results/analysis/seed2.py`, which
