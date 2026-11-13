@@ -523,7 +523,6 @@ Which version to cite depends on what for:
   title     = {Ru-Jev: open typed-decision model (v1.3) — code, per-row results and evaluation scripts},
   author    = {Beskorovainyi, Vladimir},
   year      = {2026},
-  version   = {1.3.0},
   publisher = {Zenodo},
   doi       = {10.5281/zenodo.23986846},
   url       = {https://doi.org/10.5281/zenodo.23986846}
