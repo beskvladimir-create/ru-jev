@@ -1,0 +1,38 @@
+# Ru-Jev v1.3.1. One change against v1.3, and it is a repair.
+#
+# RuCoLA ships three splits and its test split carries no label: the csv behind
+# it holds id and sentence, and the loader fills the label with -1.
+# scripts/build_data.py pooled every split of a source and mapped that -1 onto a
+# valid option index, so 2,788 sentences entered the v1.3 mixture carrying
+# "неприемлемо", a label they do not have. 2,536 of them were in training and
+# 252 in the validation split the release was measured on.
+# results/rucola_test/ holds what they did to every published figure.
+#
+# This file is configs/v1_3.yaml with one field changed, the output directory.
+# The seed stays 42, the seed the release was trained with, so that this run
+# against the released v1.3 differs in the removed rows alone.
+#
+# The data are not rebuilt. Rebuilding with the fixed builder would draw a
+# different train and validation carve, because the pool it shuffles is smaller,
+# and the comparison would then confound the repair with a new split. Instead
+# the v1.3 mixture is reproduced byte for byte with the builder at commit
+# 96fb67f, which is checked against the sha256 recorded in
+# results/v13_seed2/README.md, and scripts/strip_rucola_test.py removes exactly
+# the defective rows from it. Every remaining row keeps its wording, its option
+# order and its position in the file.
+#
+# Four epochs as before. The epoch that is read is fixed in
+# results/v131/README.md before training, and it is the third of four, as the
+# release is.
+base_model: jhu-clsp/mmBERT-base      # MIT, multilingual, 307M
+out_dir: out/ru-jev-v1.3.1
+max_len: 256
+epochs: 4
+lr: 2.0e-5
+batch_examples: 16
+warmup_ratio: 0.06
+weight_decay: 0.01
+seed: 42
+include_rucola: true
+val_fraction: 0.1
+shuffle_options: true                  # re-order candidates every epoch

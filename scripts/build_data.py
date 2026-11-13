@@ -491,6 +491,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--include-rucola", action="store_true", default=True)
     ap.add_argument("--no-rucola", dest="include_rucola", action="store_false")
+    ap.add_argument("--out", default=None,
+                    help="where train.jsonl and val.jsonl go; the default is "
+                         "data/ beside this script, and an explicit path keeps a "
+                         "build from overwriting one that earlier results refer to")
     ap.add_argument("--cap", type=int, default=30000,
                     help="max rows kept per large single-label source (balance)")
     args = ap.parse_args()
@@ -552,12 +556,14 @@ def main():
         raise SystemExit(1)
 
     random.shuffle(train)
+    out_dir = args.out or OUT
+    os.makedirs(out_dir, exist_ok=True)
     for name, rows in (("train", train), ("val", val)):
-        with open(os.path.join(OUT, f"{name}.jsonl"), "w", encoding="utf-8") as f:
+        with open(os.path.join(out_dir, f"{name}.jsonl"), "w", encoding="utf-8") as f:
             for r in rows:
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
-    print("\nTOTAL: {} train / {} val written to {}".format(len(train), len(val), OUT))
+    print("\nTOTAL: {} train / {} val written to {}".format(len(train), len(val), out_dir))
     print("train by task:", dict(got))
     print("val by task:  ", dict(Counter(r["task"] for r in val)))
     print("composition complete: all {} tasks present".format(len(EXPECTED)), flush=True)
