@@ -368,6 +368,42 @@ published, the same way the intermediate checkpoints of the ladder are not.
 1337 is the seed of `seed_aug_s2`, chosen so that two pairs of runs differ by one
 thing at a time rather than one.
 
+### `results/v131/`, the v1.3 recipe without the defective RuCoLA rows
+
+The released recipe trained again on the v1.3 mixture with the 2,536 defective
+training rows of `results/rucola_test/` taken out and nothing else changed, the
+seed included. The reading rule and the epoch that is read were fixed in
+`README.md` and committed before the GPU was rented. The rule refused
+publication, so these weights are not published and there is no v1.3.1 release.
+
+| File | Rows | Contents |
+|---|---|---|
+| `README.md` | | the rule, written before the run, then the run and every table |
+| `train_log.txt` | | what the local watcher kept of the run, with its own header |
+| `val/<checkpoint>.jsonl` | 26,494 | logits on this run's validation split, fields `task, answer, scores`, the fields and the order of `results/validation/val_v13_trainsplit.jsonl` |
+| `fix18/<checkpoint>.jsonl` | 6,000 | logits on the wording bench, all 18 candidates |
+| `vocab2/<checkpoint>.jsonl` | 2,000 | logits on the first probe, five candidates |
+| `vocab3/<checkpoint>.jsonl` | 2,000 | logits on the second probe, all 18 candidates |
+
+The checkpoint names are `v1.3.1-ep1of4` to `v1.3.1-ep4of4`. The validation
+directory holds all four epochs, the three bench and probe directories hold the
+third epoch alone, which is the one the rule reads. The released v1.3 is not
+scored again anywhere in this directory: its answers on these same rows are
+already published, on the validation split in
+`results/validation/val_v13_trainsplit.jsonl` and on the bench and the probes in
+`results/fix18/scores_v13.jsonl`, `results/vocab2/scores_v13.jsonl` and
+`results/vocab3/scores_v13.jsonl`, and `results/analysis/v131.py` reads them
+from there.
+
+The validation rows of this run are the rows of the released dump minus the 252
+defective ones, in the same order, so the two runs are compared row for row with
+no leakage. That identity is a condition the rule set in advance, and the script
+checks it on the task name, the index of the correct candidate and the number of
+candidates before it prints anything.
+
+`configs/v1_3_1.yaml` is the config it trained with. It differs from
+`configs/v1_3.yaml` in `out_dir` and in nothing else.
+
 ### `results/vocab_bias/`
 
 One file, `README.md`, holding the tables that `results/analysis/vocab_bias.py`

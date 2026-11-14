@@ -1,0 +1,44 @@
+# The v1.3.1 run, as the local watcher kept it.
+#
+# This is not the whole log. The pod printed a line per 500 steps and that
+# stream went down with the pod, which was shut off as soon as the five
+# snapshots were on disk and verified. What the watcher kept is every line that
+# carries a number or a verdict: the two lines the bootstrap printed about the
+# data, the four epochs, and the temperature pass.
+#
+# The bootstrap wrote its two data lines in Russian. In English they read:
+#   "the v1.3 mixture is reproduced byte for byte"  (the builder at 96fb67f
+#     returned the two sha256 recorded in results/v131/README.md)
+#   "the stripped mixture matches the one recorded in the rule"
+# The three retry lines above them are the Hugging Face loader refusing the
+# RuCoLA script dataset; the parquet fallback in build_data.py then succeeded,
+# which is why the mixture still matched byte for byte.
+#
+# ep3 and epfinal are the same checkpoint, saved twice, byte for byte. The
+# temperature pass read it once, as epfinal.
+[retry 1/3] RuntimeError: Dataset scripts are no longer supported, but found rucola.py
+[retry 2/3] RuntimeError: Dataset scripts are no longer supported, but found rucola.py
+[retry 3/3] RuntimeError: Dataset scripts are no longer supported, but found rucola.py
+смесь v1.3 воспроизведена побайтово
+очищенная смесь совпала с записанной в правиле
+== train v1.3.1 ==
+== epoch 0 done, mean loss 0.5926
+   val loss 0.4974  val acc 0.7646  (n=26494)
+SNAPSHOT ep0
+== epoch 1 done, mean loss 0.4261
+   val loss 0.4464  val acc 0.8014  (n=26494)
+SNAPSHOT ep1
+== epoch 2 done, mean loss 0.2714
+   val loss 0.4850  val acc 0.8170  (n=26494)
+SNAPSHOT ep2
+== epoch 3 done, mean loss 0.0969
+   val loss 0.7684  val acc 0.8174  (n=26494)
+SNAPSHOT ep3
+SNAPSHOT epfinal
+TRAIN_OK
+/workspace/work/out/snapshots/ep0  T = 1.1370  val loss 0.4974  val acc 0.7646  (n=26494)
+/workspace/work/out/snapshots/ep1  T = 1.1726  val loss 0.4464  val acc 0.8014  (n=26494)
+/workspace/work/out/snapshots/ep2  T = 1.8729  val loss 0.4850  val acc 0.8170  (n=26494)
+/workspace/work/out/snapshots/epfinal  T = 3.6754  val loss 0.7684  val acc 0.8174  (n=26494)
+TEMPS_OK
+DONE

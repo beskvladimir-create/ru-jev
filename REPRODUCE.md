@@ -430,6 +430,73 @@ expects the smaller figure. The other three callers of `rows_simple`,
 lose nothing. No checkpoint was retrained, so every published number stays as
 published and the recomputation above is what the numbers would have been.
 
+## The v1.3 recipe without the defective RuCoLA rows
+
+The rule this run is read by was committed before the GPU was rented, in
+`results/v131/README.md`, and the run is recorded in the same file after it. The
+rule refused publication, so there is no v1.3.1 release and these weights are
+not published. The scores are.
+
+The mixture is not rebuilt with the fixed builder. A rebuild draws a different
+carve, and measured with `scripts/split_overlap.py` 89.4 per cent of the
+rebuilt validation rows of `rucola` had been in the release's training split,
+which would put the leak on the one task the run is about. Instead the v1.3
+mixture is reproduced and the defective rows are taken out of it:
+
+    git show 96fb67f:scripts/build_data.py > build_v13.py
+    python build_v13.py
+    python scripts/strip_rucola_test.py --in data --out data-v131
+
+The builder at that commit has no `--out` and writes into `data/`, which is
+where the release's own build went; the `--out` flag is a later addition.
+
+The first build has to return
+`39ad58ba24818f078f9d1bbb64cfe62f514abb5e1bff153eff9f43fbae327fcf` and
+`8b39de0a87b46a5aff61f894b0e2cfa48a2b2862e4c930a20920f7e457398b4f`, the hashes
+of the v1.3 mixture recorded in `results/v13_seed2/README.md`, and the stripped
+build has to return the two hashes recorded in `results/v131/README.md`. On a
+current `datasets` the Hugging Face loader refuses RuCoLA's script dataset; the
+parquet fallback in `build_data.py` takes over and the mixture still matches
+byte for byte.
+
+    python scripts/train.py --config configs/v1_3_1.yaml
+
+`configs/v1_3_1.yaml` differs from `configs/v1_3.yaml` in the output directory
+and in nothing else, the seed included. Four epochs, 8,841 steps each, batch 16,
+about 43 minutes an epoch on one RTX 4090. As with the second seed, keeping four
+epochs needs an external snapshotter or four output directories.
+
+The temperature of each epoch, with the instrument the release's own temperature
+came from:
+
+    python3 results/analysis/fit_seed2_temperatures.py \
+        --config configs/v1_3_1.yaml --rows data-v131/val.jsonl \
+        <snapshot of each epoch>
+
+Scoring. The released v1.3 is not scored again: its answers on these rows are
+already published. So the new run has to be scored on the same path the
+published dump came from, which is the CPU of one machine and not a card, or the
+control would compare two machines instead of two models. About 25 minutes an
+epoch on validation, and 15 minutes for the bench and the two probes:
+
+    python scripts/score_rujev.py --model <snapshot> --rows data-v131/val.jsonl \
+        --out results/v131/val/<checkpoint>.jsonl --tag <checkpoint>
+    python scripts/score_rujev.py --model <snapshot> --rows results/fix18/rows.jsonl \
+        --out results/v131/fix18/<checkpoint>.jsonl --tag <checkpoint>
+
+The validation dumps are reduced to `task`, `answer` and `scores`, the fields of
+`results/validation/val_v13_trainsplit.jsonl`, because the mixture itself is not
+redistributed.
+
+Every table, including the rule applied to the result, from the committed dumps
+alone, with no weights and no network:
+
+    python3 -I results/analysis/v131.py
+
+Tables in `results/v131/README.md`. The script refuses to print a number until
+the row identity the rule demanded in advance holds on all 26,494 rows, and it
+also checks the four CPU accuracies against the four the card printed.
+
 ## Split stability of a rebuilt mixture
 
     python scripts/split_overlap.py --earlier <earlier build> --rebuilt data \
