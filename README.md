@@ -46,6 +46,13 @@ table gave one of them under the other's row count.
 | ECE, temperature fitted on the same rows | 13,373 | 0.0159 |
 | Released temperature | | 1.8640 |
 
+**Every figure in this table rests on a validation split that held 252 of
+RuCoLA's unlabelled test sentences, admitted by the builder with an invented
+label.** The released weights were not retrained, so these are the figures of
+the release as published. Without those rows the same checkpoint reads 0.8242
+over the whole split and refits its temperature to 1.8380.
+`results/rucola_test/` recomputes each of them, with the rows and without.
+
 Three accuracy figures on one checkpoint, counting different things. 0.8181 is
 what the training run itself reported at the end of epoch 3 and is the figure in
 the trajectory table of the model card and in the paper; the log it comes from is
@@ -81,7 +88,7 @@ Per task, v1.3 on its own validation split:
 | rureviews (sentiment) | 0.774 | 3000 |
 | danetqa (yes/no) | 0.753 | 821 |
 | terra (entailment) | 0.733 | 307 |
-| rucola (acceptability) | 0.647 | 1344 |
+| rucola (acceptability), see `results/rucola_test/` | 0.647 | 1344 |
 | georeview (5 levels) | 0.631 | 3000 |
 | mera_qa (reasoning) | 0.596 | 245 |
 | parus (choice) | 0.590 | 100 |
@@ -151,7 +158,7 @@ is the release this table was produced for.
 | russe (word sense) | 0.631 | 0.701 | 0.822 |
 | georeview (5 levels) | 0.199 | 0.544 | 0.629 |
 | rureviews (sentiment) | 0.324 | 0.720 | 0.772 |
-| rucola (acceptability) | 0.587 | 0.609 | 0.650 |
+| rucola (acceptability), see the note below | 0.742 | 0.730 | 0.650 |
 | toxicity | 0.766 | 0.943 | 0.961 |
 | rwsd (coreference) | 0.554 | 0.554 | 0.564 |
 
@@ -162,6 +169,26 @@ that is all you need, a linear model on character n-grams is cheaper to run and
 easier to debug. On `rwsd` the model is level with predicting the majority
 class, so it does not do coreference at all; that row is in the table because
 leaving it out would be dishonest.
+
+The `rucola` row changed on 2026-11-14 and the reason matters more than the
+numbers. The figures that stood here, 0.587 for the majority class and 0.609 for
+TF-IDF, were computed on a validation split that held 281 of RuCoLA's unlabelled
+test sentences, which the builder had admitted carrying an invented
+`неприемлемо`. Those rows are gone from the build the row is now computed on,
+9,594 training and 1,063 validation rows, and every other row of the table is
+unchanged to the third decimal, which is what makes the comparison honest.
+`results/rucola_test/` holds the whole account.
+
+Read the new row carefully, because it inverts a claim. On rows that carry a
+real label, predicting the majority class gets 0.742 and TF-IDF gets 0.730. The
+released v1.3 gets 0.6886 on the same kind of clean rows, recomputed from its
+published per-row scores. On this one task the model is behind both cheap
+baselines, and the earlier appearance of it being ahead came from the invented
+rows making the task look harder than it is.
+
+The third column is not yet comparable with the first two. 0.650 is v1.1 on the
+old contaminated half and has not been recomputed; that needs the v1.1
+checkpoint scored again, which is not done here.
 
 The other thing a baseline cannot give you is a calibrated probability, which
 is what makes a threshold mean the same thing from one task to the next.
@@ -175,7 +202,10 @@ carry `"abstain": true`. Omit `threshold` and nothing is withheld, which is how
 the service behaved before.
 
 What a threshold buys, on v1.3, measured on the half of the validation split
-held out from temperature fitting (13,373 decisions, T = 1.8640, split seed 17).
+held out from temperature fitting (13,373 decisions, T = 1.8640, split seed 17). Those
+decisions include the unlabelled RuCoLA test rows; `results/rucola_test/` gives
+the same table without them, where no threshold moves and every accuracy rises
+by between 0.0008 and 0.0029.
 Reproduce with `python scripts/coverage.py results/validation/val_v13_trainsplit.jsonl`.
 
 | Share answered | Threshold | Accuracy on answered | Errors per 1000 |

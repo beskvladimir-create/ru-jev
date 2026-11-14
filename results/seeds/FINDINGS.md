@@ -63,6 +63,14 @@ a temperature of 1.8640, which matches Hugging Face. A byte comparison confirms
 it: `ship/model.safetensors` and `ep2/model.safetensors` are the same file. Any
 measurement "on v1.3" has to go through `ship`.
 
+**The temperatures here were fitted on a split with invented rows.** RuCoLA's
+test split carries no label and the builder admitted 252 of its sentences into
+the validation split of the published run with an invented `неприемлемо`. The
+weights were not retrained, so 1.8640 is the released temperature and stays the
+released temperature; on the same split without those rows the same checkpoint
+refits to 1.8380. The 1.8711 and 3.6450 of the second seed rest on the same
+defect. `results/rucola_test/` holds the account and the recomputation.
+
 **The overtraining of the fourth epoch is confirmed on a second seed.** The
 temperature at the third epoch is 1.8711 and at the fourth 3.6450, against 1.8640
 and 3.92 for the published run.
