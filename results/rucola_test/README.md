@@ -26,15 +26,20 @@ plus dev 2,787 plus test 2,789.
 Counted by sha256 of the stripped sentence, against the split each build keeps
 on disk. One sentence occurs in both the test split and the labelled splits of
 the source, so it is excluded from every count below: it has a real label and is
-legitimate training data.
+legitimate training data. It occurs twice in the training half of every build,
+which is what makes the exclusion worth stating: counted against the wider list
+of 2,789 hashes the three training figures below read 2,509, 2,538 and 2,495,
+and a build's two splits then add up to 2,790 rather than 2,788. The counts
+below are against `test_only_sha256.txt`, and every build's two figures sum to
+2,788.
 
 | Build | Split | rucola rows | Of them from the test split |
 |---|---|---|---|
-| v1.1 | training | 12,101 | 2,509 |
+| v1.1 | training | 12,101 | 2,507 |
 | v1.1 | validation | 1,344 | 281 |
 | v1.3 | training | 12,101 | 2,536 |
 | v1.3 | validation | 1,344 | 252 |
-| rebuilt with the current builder | training | 12,101 | 2,495 |
+| rebuilt with the current builder | training | 12,101 | 2,493 |
 | rebuilt with the current builder | validation | 1,344 | 295 |
 
 Every affected row in every build carries `неприемлемо` as its right answer, in
