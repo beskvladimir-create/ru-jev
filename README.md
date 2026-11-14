@@ -187,11 +187,21 @@ unchanged to the third decimal, which is what makes the comparison honest.
 `results/rucola_test/` holds the whole account.
 
 Read the new row carefully, because it inverts a claim. On rows that carry a
-real label, predicting the majority class gets 0.742 and TF-IDF gets 0.730. The
-released v1.3 gets 0.6886 on the same kind of clean rows, recomputed from its
-published per-row scores. On this one task the model is behind both cheap
-baselines, and the earlier appearance of it being ahead came from the invented
-rows making the task look harder than it is.
+real label, predicting the majority class gets 0.742 and TF-IDF gets 0.730. Both
+are measured on the 1,063 `rucola` validation rows of the build above, the
+earlier build with the invented rows stripped out. Those are not the rows the
+release was measured on, so neither figure may be set against the release's own
+accuracy directly.
+
+Against the release the comparison has to be made on the release's own rows. On
+the 1,092 rows of v1.3's validation split that carry a real label, the majority
+class gets 0.7372 and the released v1.3 gets 0.6886, recomputed from its
+published per-row scores, so on this one task the model is 0.0486 behind a
+constant answer. Read as published, with the invented rows in, the same
+checkpoint read 0.6473 against a majority class of 0.5990 and looked five points
+ahead. The invented rows made the task look harder than it is and the model look
+better on it than it is, and both effects point the same way.
+`results/rucola_test/` holds both readings side by side.
 
 The third column is not yet comparable with the first two. 0.650 is v1.1 on the
 old contaminated half and has not been recomputed; that needs the v1.1
