@@ -53,6 +53,13 @@ the release as published. Without those rows the same checkpoint reads 0.8242
 over the whole split and refits its temperature to 1.8380.
 `results/rucola_test/` recomputes each of them, with the rows and without.
 
+Retraining was tried and is not what stands here. The same recipe trained again
+on the same mixture with those rows removed gains 0.066 on the 1,092 `rucola`
+validation rows that carry a real label and loses 0.007 over the whole
+validation split, which the rule registered before that run does not allow, so
+nothing was released from it. `results/v131/` holds the rule, the run and every
+table.
+
 Three accuracy figures on one checkpoint, counting different things. 0.8181 is
 what the training run itself reported at the end of epoch 3 and is the figure in
 the trajectory table of the model card and in the paper; the log it comes from is
@@ -204,8 +211,9 @@ the service behaved before.
 What a threshold buys, on v1.3, measured on the half of the validation split
 held out from temperature fitting (13,373 decisions, T = 1.8640, split seed 17). Those
 decisions include the unlabelled RuCoLA test rows; `results/rucola_test/` gives
-the same table without them, where no threshold moves and every accuracy rises
-by between 0.0008 and 0.0029.
+the same table without them, where every accuracy rises, by between 0.0008 and
+0.0038, and the only threshold that changes is the one at full coverage, which
+is not a threshold but the lowest confidence in the set.
 Reproduce with `python scripts/coverage.py results/validation/val_v13_trainsplit.jsonl`.
 
 | Share answered | Threshold | Accuracy on answered | Errors per 1000 |

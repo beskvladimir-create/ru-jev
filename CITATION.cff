@@ -8,8 +8,8 @@ authors:
     orcid: "https://orcid.org/0009-0004-7005-6242"
     affiliation: "Besk Tech"
 license: MIT
-version: 1.3.12
-date-released: "2026-11-13"
+version: 1.3.13
+date-released: "2026-11-14"
 repository-code: "https://github.com/beskvladimir-create/ru-jev"
 preferred-citation:
   type: article
